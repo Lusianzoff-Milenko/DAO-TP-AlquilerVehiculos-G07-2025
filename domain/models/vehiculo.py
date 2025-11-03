@@ -1,13 +1,19 @@
-class Vehiculo:
-    def __init__(self, modelo, patente, nro_chasis, color, anio_fabricacion, precio_base, estado):
-        self.modelo = modelo
-        self.patente = patente
-        self.nro_chasis = nro_chasis
-        self.color = color
-        self.anio_fabricacion = anio_fabricacion
-        self.precio_base = precio_base
-        self.estado = estado
+import datetime
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
+from sqlalchemy.orm import relationship
+from .base import Base
 
-    def __str__(self):
-        return f"Vehiculo(modelo={self.modelo}, patente={self.patente}, nro_chasis={self.nro_chasis}, color={self.color}, anio_fabricacion={self.anio_fabricacion}, precio_base={self.precio_base}, estado={self.estado})"
+class Vehiculo(Base):
+    __tablename__ = 'Vehiculo'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    id_modelo: int = Column(Integer, ForeignKey('modelo.id'), nullable=False)
+    patente: str = Column(String(20), nullable=False, unique=True)
+    nro_chasis: str = Column(String(20), nullable=False, unique=True)
+    id_color: int = Column(Integer, ForeignKey('color.id'), nullable=False)
+    anio_fabricacion: DateTime = Column(DateTime, default=datetime.datetime.now(), name="año_fabricacion")
+    precio_base: float = Column(Float, nullable=False)
+    id_estado: int = Column(Integer, ForeignKey('estado.id'), nullable=False)
 
+    estado = relationship('Estado')
+    modelo = relationship('Modelo')
+    color = relationship('Color')

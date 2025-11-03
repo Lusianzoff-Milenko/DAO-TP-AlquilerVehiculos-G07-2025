@@ -1,10 +1,14 @@
-class Empleado:
-    def __init__(self, tipo_puesto, persona, fecha_ingreso, fecha_egreso):
-        self.tipo_puesto = tipo_puesto
-        self.persona = persona
-        self.fecha_ingreso = fecha_ingreso
-        self.fecha_egreso = fecha_egreso
+import datetime
+from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+from .base import Base
 
-    def __str__(self):
-        return f"Empleado(tipoPuesto={self.tipo_puesto}, id_persona={self.persona}, fecha_ingreso={self.fecha_ingreso}, fecha_egreso={self.fecha_egreso})"
-
+class Empleado(Base):
+    __tablename__ = 'Empleado'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    id_tipo_puesto: int = Column(Integer, ForeignKey("tipo_puesto.id"))
+    id_persona: int = Column(Integer, ForeignKey("persona.id"))
+    fecha_ingreso: DateTime = Column(DateTime, default=datetime.datetime.now)
+    fecha_egreso: DateTime = Column(DateTime)
+    tipo_puesto = relationship("TipoPuesto")
+    persona = relationship("Persona")

@@ -9,9 +9,18 @@ from config.database import SingletonMeta
 
 class Database(metaclass=SingletonMeta):
     def __init__(self, db_path: str | None = None):
+        # idempotent init for singleton
         if getattr(self, "_initialized", False):
             return
-        self._db_path = db_path or os.getenv("config/alquiler_vehiculos_data_base.db")
+
+        env_path = os.getenv("./alquiler_vehiculos_data_base")
+        self._db_path = db_path or env_path or os.path.join(os.getcwd(), "./alquiler_vehiculos_data_base.db")
+
+        # Ensure directory exists if path includes directories
+        dirpath = os.path.dirname(self._db_path)
+        if dirpath:
+            os.makedirs(dirpath, exist_ok=True)
+
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
         self._lock = threading.Lock()
         self._initialized = True

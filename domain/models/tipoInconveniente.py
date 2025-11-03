@@ -1,7 +1,10 @@
-class TipoInconveniente:
-    def __init__(self, nombre, descipcion):
-        self.nombre = nombre
-        self.descipcion = descipcion
+from sqlalchemy import Column, Integer, String
+from .base import Base
 
-    def __str__(self):
-        return f"TipoInconveniente(nombre={self.nombre}, descripcion={self.descipcion})"
+
+
+class TipoInconveniente(Base):
+    __tablename__ = 'TipoInconveniente'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), nullable=False, unique=True)
+    descripcion: str = Column(String(50), nullable=False)

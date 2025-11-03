@@ -1,7 +1,9 @@
-class TipoPuesto:
-    def __init__(self, nombre):
-        self.nombre = nombre
+from sqlalchemy import Column, Integer, String
+from .base import Base
 
-    def __str__(self):
-        return f"TipoPuesto(nombre={self.nombre})"
 
+
+class TipoPuesto(Base):
+    __tablename__ = 'TipoPuesto'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), nullable=False, unique=True)

@@ -1,6 +1,7 @@
-class TipoDocumento:
-    def __init__(self, nombre):
-        self.nombre = nombre
+from sqlalchemy import Column, Integer, String
+from .base import Base
 
-    def __str__(self):
-        return f"TipoDocumento(nombre={self.nombre})"
+class TipoDocumento(Base):
+    __tablename__ = 'TipoDocumento'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(50), nullable=False)

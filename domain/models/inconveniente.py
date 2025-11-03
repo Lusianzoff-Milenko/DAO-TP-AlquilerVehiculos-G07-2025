@@ -1,11 +1,17 @@
-class Inconveniente:
-    def __init__(self, nombre, descripcion, tipo_inconveniente, costo, contrato, estado):
-        self.nombre = nombre
-        self.descripcion = descripcion
-        self.tipo_inconveniente = tipo_inconveniente
-        self.costo = costo
-        self.contrato = contrato
-        self.estado = estado
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy.orm import relationship
+from .base import Base
 
-    def __str__(self):
-        return f"Inconveniente(nombre={self.nombre}, descripcion={self.descripcion}, tipoInconveniente={self.tipo_inconveniente}, costo={self.costo}, contrato={self.contrato}, estado={self.estado})"
+class Inconveniente(Base):
+    __tablename__ = 'RegistroInconveniente'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), nullable=False)
+    descripcion: str = Column(String(255), nullable=True)
+    id_tipo_inconveniente: int = Column(Integer, ForeignKey('tipo_inconveniente.id'), name="id_tipo_inconveniente")
+    costo: float = Column(Float, nullable=True)
+    id_contrato: int = Column(Integer, ForeignKey('contrato.id'))
+    id_estado: int = Column(Integer, ForeignKey('estado.id'))
+
+    tipo_inconveniente = relationship("TipoInconveniente")
+    contrato = relationship("Contrato", back_populates="inconvenientes")
+    estado = relationship("Estado")

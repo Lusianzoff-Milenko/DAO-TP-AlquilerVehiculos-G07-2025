@@ -1,12 +1,17 @@
-class Modelo:
-    def __init__(self,nombre, marca, cantidad_pasajeros, cantidad_puertas, motor, año_lanzamiento):
-        self.nombre = nombre
-        self.marca = marca
-        self.cantidad_pasajeros = cantidad_pasajeros
-        self.cantidad_puertas = cantidad_puertas
-        self.motor = motor
-        self.año_lanzamiento = año_lanzamiento
+from xmlrpc.client import DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+from .base import Base
 
-    def __str__(self):
-        return f"Modelo: {self.nombre}, Marca: {self.marca}, Pasajeros: {self.cantidad_pasajeros}, Puertas: {self.cantidad_puertas}, Motor: {self.motor}, Año: {self.año_lanzamiento}"
 
+
+class Modelo(Base):
+    __tablename__ = 'Modelo'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), nullable=False, unique=True)
+    id_marca: Integer = Column(Integer, ForeignKey('marca.id'), nullable=False)
+    cantidad_pasajeros: int = Column(Integer, nullable=False)
+    cantidad_puertas: int = Column(Integer, nullable=False)
+    motor: str = Column(String(50), nullable=False)
+    anio_lanzamiento: DateTime = Column(String, nullable=False, name="año_lanzamiento")
+    marca = relationship('Marca')

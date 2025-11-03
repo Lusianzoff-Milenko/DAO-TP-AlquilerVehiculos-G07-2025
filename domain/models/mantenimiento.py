@@ -1,12 +1,19 @@
-class Mantenimiento:
-    def __init__(self, vehiculo, costo, descripcion, estado, empleado, fecha_hora):
-        self.vehiculo = vehiculo
-        self.costo = costo
-        self.descripcion = descripcion
-        self.estado = estado
-        self.empleado = empleado
-        self.fecha_hora = fecha_hora
+import datetime
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
+from sqlalchemy.orm import relationship
+from .base import Base
 
-    def __str__(self):
-        return f"Mantenimiento(vehiculo={self.vehiculo}, costo={self.costo}, descripcion={self.descripcion}, estado={self.estado}, empleado={self.empleado}, fecha_hora={self.fecha_hora})"
 
+class Mantenimiento(Base):
+    __tablename__ = 'Mantenimiento'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    id_vehiculo: int = Column(Integer, ForeignKey("vehiculo.id"))
+    costo: float = Column(Float, nullable=False)
+    descripcion: str = Column(String, nullable=False)
+    id_estado: int = Column(Integer, ForeignKey("estado.id"))
+    id_empleado: int = Column(Integer, ForeignKey("empleado.id"))
+    fecha_hora: DateTime = Column(DateTime, nullable=False, default=datetime.datetime.now())
+
+    vehiculo = relationship("Vehiculo")
+    estado = relationship("Estado")
+    empleado = relationship("Empleado")

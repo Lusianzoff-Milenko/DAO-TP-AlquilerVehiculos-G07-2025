@@ -1,7 +1,8 @@
-class Estado:
-    def __init__(self, nombre):
-        self.nombre = nombre
+from sqlalchemy import Column, Integer, String
+from .base import Base
 
-    def __str__(self):
-        return f"Estado(nombre={self.nombre})"
 
+class Estado(Base):
+    __tablename__ = 'Estado'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), unique=True, nullable=False)

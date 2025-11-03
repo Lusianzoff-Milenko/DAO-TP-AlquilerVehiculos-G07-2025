@@ -1,7 +1,8 @@
-class MetodoDePago:
-    def __init__(self, nombre):
-        self.nombre = nombre
+from sqlalchemy import Column, Integer, String
+from .base import Base
 
-    def __str__(self):
-        return f"Método de Pago: {self.nombre}"
 
+class MetodoDePago(Base):
+    __tablename__ = 'MetodoDePago'
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    nombre: str = Column(String(50), nullable=False, unique=True)
