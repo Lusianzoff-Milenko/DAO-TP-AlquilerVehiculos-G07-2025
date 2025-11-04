@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -12,7 +12,7 @@ class Mantenimiento(Base):
     descripcion: str = Column(String, nullable=False)
     id_estado: int = Column(Integer, ForeignKey("estado.id"))
     id_empleado: int = Column(Integer, ForeignKey("empleado.id"))
-    fecha_hora: DateTime = Column(DateTime, nullable=False, default=datetime.datetime.now())
+    fecha_hora: datetime = Column(DateTime, nullable=False, default=datetime.now())
 
     vehiculo = relationship("Vehiculo")
     estado = relationship("Estado")

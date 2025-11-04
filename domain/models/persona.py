@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date
 
-from sqlalchemy import Column, Integer, String,DateTime
+from sqlalchemy import Column, Integer, String, Date
 from .base import Base
 
 class Persona(Base):
@@ -11,4 +11,4 @@ class Persona(Base):
     telefono: str = Column(String(50), nullable=False)
     mail: str = Column(String(100), nullable=False)
     direccion: str = Column(String(100), nullable=False)
-    fecha_nacimiento: datetime = Column(DateTime, nullable=False)
+    fecha_nacimiento: date = Column(Date, nullable=False)
