@@ -111,9 +111,6 @@ class ContratoRepository:
     def delete(self, contrato_id: int) -> bool:
         try:
             with self._db.transaction() as cur:
-                # Due to 'cascade="all, delete-orphan"' in Contrato for DetalleContrato,
-                # deleting a Contrato should handle its DetalleContrato records, but
-                # here we only issue the top-level delete.
                 cur.execute("DELETE FROM Contrato WHERE id = ?", (contrato_id,))
                 return cur.rowcount > 0
         except Exception as e:

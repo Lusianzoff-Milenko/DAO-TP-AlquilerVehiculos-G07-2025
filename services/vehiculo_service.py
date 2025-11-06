@@ -43,9 +43,11 @@ class VehiculoService:
 
         return self._repo.update(vehiculo)
 
-    def delete_vehiculo(self, vehiculo_id: int) -> bool:
-        if self._contrato_service.has_active_contracts("vehiculo", vehiculo_id):
-            print(
-                f"Error de Negocio: No se puede eliminar el Vehículo ID {vehiculo_id} porque está asignado a contratos activos.")
-            return False
+    def delete_vehiculo(self, vehiculo_id: int) -> bool | None:
+        # Lógica de Negocio: Evitar eliminar si está en uso por Contratos/Mantenimientos/Inconvenientes
+        active_contracts = self._contrato_service.get_active_contracts_by_entity('vehiculo', vehiculo_id)
+        if active_contracts:
+            print(f"No se puede eliminar el vehículo {vehiculo_id} porque tiene contratos activos.")
+            return None
+
         return self._repo.delete(vehiculo_id)

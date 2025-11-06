@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, Date
 from .base import Base
 
 class Persona(Base):
-    __tablename__ = 'persona'
+    __tablename__ = 'Persona'
     id: int = Column(Integer, primary_key=True, autoincrement=True)
     nombre: str = Column(String(50), nullable=False)
     apellido: str = Column(String(50), nullable=False)

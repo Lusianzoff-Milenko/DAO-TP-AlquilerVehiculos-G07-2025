@@ -1,10 +1,9 @@
 from typing import Optional, List
 
-from data_access.repositories.contrato_repository import ContratoRepository
 from domain.models.cliente import Cliente
 from data_access.repositories.cliente_repository import ClienteRepository
-from services.contrato_service import ContratoService
-from validation_mapper import ValidationMapper
+from .contrato_service import ContratoService
+from .validation_mapper import ValidationMapper
 from data_access.repositories.persona_repository import PersonaRepository
 from data_access.repositories.tipo_documento_repository import TipoDocumentoRepository
 class ClienteService:

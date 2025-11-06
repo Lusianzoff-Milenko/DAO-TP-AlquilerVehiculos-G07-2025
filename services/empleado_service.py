@@ -1,5 +1,4 @@
 from typing import Optional, List
-from data_access.repositories.contrato_repository import ContratoRepository
 from domain.models.empleado import Empleado
 from data_access.repositories.empleado_repository import EmpleadoRepository
 from data_access.repositories.persona_repository import PersonaRepository

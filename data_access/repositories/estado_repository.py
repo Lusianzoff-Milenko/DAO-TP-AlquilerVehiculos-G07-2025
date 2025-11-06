@@ -11,15 +11,20 @@ class EstadoRepository:
             return "Invalid 'nombre' — must be a non-empty string"
         if len(estado.nombre) > 50:
             return "Invalid 'nombre' — maximum length is 50 characters"
+        if not isinstance(estado.ambito, str) or not estado.ambito.strip():
+            return "Invalid 'ambito' — must be a non-empty string"
+        if len(estado.ambito) > 50:
+            return "Invalid 'ambito' — maximum length is 50 characters"
         return None
 
     def _row_to_estado(self, row) -> Estado | None:
-        # row order: id, nombre
+        # row order: id, nombre, ambito
         if row is None:
             return None
         return Estado(
             id=row[0],
             nombre=row[1],
+            ambito=row[2],
         )
 
     def create(self, estado: Estado) -> Optional[int]:
@@ -30,24 +35,23 @@ class EstadoRepository:
 
         try:
             with self._db.transaction() as cur:
-                # Check for existing estado by nombre (unique constraint)
+                # Check for existing estado by nombre and ambito (unique constraint if applicable)
                 cur.execute(
                     """
-                    SELECT id FROM Estado WHERE nombre = ?
+                    SELECT id FROM Estado WHERE nombre = ? AND ambito = ?
                     """,
-                    (estado.nombre,),
+                    (estado.nombre, estado.ambito),
                 )
                 existing = cur.fetchone()
                 if existing:
                     print(f"Estado already exists with id {existing[0]}")
                     return existing[0]
-
                 cur.execute(
                     """
-                    INSERT INTO Estado (nombre)
-                    VALUES (?)
+                    INSERT INTO Estado (nombre, ambito)
+                    VALUES (?, ?)
                     """,
-                    (estado.nombre,),
+                    (estado.nombre, estado.ambito),
                 )
                 return cur.lastrowid
         except Exception as e:
@@ -59,7 +63,7 @@ class EstadoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, nombre
+                    SELECT id, nombre, ambito
                     FROM Estado WHERE id = ?
                     """,
                     (estado_id,),
@@ -75,12 +79,12 @@ class EstadoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, nombre
+                    SELECT id, nombre, ambito
                     FROM Estado ORDER BY id
                     """
                 )
                 rows = cur.fetchall()
-                return [self._row_to_estado(r) for r in rows]
+                return [self._row_to_estado(r) for r in rows if r is not None]
         except Exception as e:
             print(f"Error listing all estados: {e}")
             raise
@@ -96,11 +100,12 @@ class EstadoRepository:
                 cur.execute(
                     """
                     UPDATE Estado
-                    SET nombre = ?
+                    SET nombre = ?, ambito = ?
                     WHERE id = ?
                     """,
                     (
                         estado.nombre,
+                        estado.ambito,
                         estado.id,
                     ),
                 )
@@ -123,7 +128,7 @@ class EstadoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, nombre
+                    SELECT id, nombre, ambito
                     FROM Estado WHERE nombre = ?
                     """,
                     (name,),
@@ -132,4 +137,20 @@ class EstadoRepository:
                 return self._row_to_estado(row)
         except Exception as e:
             print(f"Error retrieving estado by name: {e}")
+            raise
+
+    def get_by_ambito(self, ambito: str) -> List[Estado]:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT id, nombre, ambito
+                    FROM Estado WHERE ambito = ?
+                    """,
+                    (ambito,),
+                )
+                rows = cur.fetchall()
+                return [self._row_to_estado(r) for r in rows if r is not None]
+        except Exception as e:
+            print(f"Error retrieving estados by ambito: {e}")
             raise

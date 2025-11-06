@@ -1,19 +1,13 @@
-import datetime
-
-from data_access.repositories.persona_repository import PersonaRepository
-from domain.models.persona import Persona
+from data_access.repositories.tipo_documento_repository import TipoDocumentoRepository
+from domain.models.tipoDocumento import TipoDocumento
+from services.tipodocumento_service import TipoDocumentoService
 
 
 def main():
-    persona_repository = PersonaRepository()
-    persona = Persona(
-        nombre="",
-        apellido="Perez",
-        telefono="123456789",
-        mail="xd@mail",
-        direccion="Calle Falsa 123",
-        fecha_nacimiento = datetime.datetime.now())
-    persona_repository.create(persona)
+    tipoDocumento_service = TipoDocumentoService(tipo_documento_repo=TipoDocumentoRepository())
+    tipoDocumento = TipoDocumento(
+        nombre="DNI")
+    tipoDocumento_service.create_tipo_documento(tipoDocumento)
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,3 @@
-# python
-# file: `application/services/estado_service.py`
 from typing import Optional, List
 from domain.models.estado import Estado
 from data_access.repositories.estado_repository import EstadoRepository
@@ -29,3 +27,6 @@ class EstadoService:
 
     def get_estado_by_name(self, name: str) -> Optional[Estado]:
         return self._repo.get_by_name(name)
+
+    def get_estado_by_ambito(self, ambito: str) -> List[Estado]:
+        return self._repo.get_by_ambito(ambito)

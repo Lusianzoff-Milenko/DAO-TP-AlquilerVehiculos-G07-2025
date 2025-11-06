@@ -168,3 +168,54 @@ class VehiculoRepository:
         except Exception as e:
             print(f"Error deleting vehiculo: {e}")
             raise
+
+    def _desechar_vehiculo(self, vehiculo_id: int) -> bool:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    UPDATE Vehiculo
+                    SET id_estado = (SELECT id FROM Estado WHERE nombre = 'DESECHADO' LIMIT 1)
+                    WHERE id = ?
+                    """,
+                    (vehiculo_id,),
+                )
+                return cur.rowcount > 0
+        except Exception as e:
+            print(f"Error desechando vehiculo: {e}")
+            raise
+
+    def _fuerza_de_servicio_vehiculo(self, vehiculo_id: int) -> bool:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    UPDATE Vehiculo
+                    SET id_estado = (SELECT id FROM Estado WHERE nombre = 'FUERA_DE_SERVICIO' LIMIT 1)
+                    WHERE id = ?
+                    """,
+                    (vehiculo_id,),
+                )
+                return cur.rowcount > 0
+        except Exception as e:
+            print(f"Error poniendo fuera de servicio el vehiculo: {e}")
+            raise
+
+    def get_estado_actual(self, vehiculo_id: int) -> Optional[int]:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT id_estado
+                    FROM Vehiculo
+                    WHERE id = ?
+                    """,
+                    (vehiculo_id,),
+                )
+                row = cur.fetchone()
+                if row:
+                    return row
+                return None
+        except Exception as e:
+            print(f"Error obteniendo estado actual del vehiculo: {e}")
+            raise
