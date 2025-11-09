@@ -4,7 +4,6 @@ from typing import List, TYPE_CHECKING, Type
 from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from .base import Base
-from ..states.contrato_states import ContratoBaseState, ContratoNew, CONTRATO_STATE_MAPPING, ContratoUnknownState
 
 if TYPE_CHECKING:
     from .detalle_contrato import DetalleContrato
@@ -31,42 +30,3 @@ class Contrato(Base):
     MetodoDePago = relationship("MetodoDePago")
     Estado = relationship("Estado")
     Empleado = relationship("Empleado")
-
-    _state: ContratoBaseState = None
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # [MODIFICADO] Aquí cargamos el estado
-        if self.id_estado:
-            self.state = self._load_state_from_id(self.id_estado)
-        else:
-            self.state = ContratoNew(self)
-
-    # [CÓDIGO SOLICITADO]
-    def _load_state_from_id(self, db_id: int) -> ContratoBaseState:
-        """
-        Mapea el ID de estado de la base de datos a la clase de estado correspondiente.
-        """
-        # 1. Busca la clase de estado en el mapa
-        StateClass: Type[ContratoBaseState] = CONTRATO_STATE_MAPPING.get(db_id)
-
-        if StateClass:
-            # 2. Si se encuentra, retorna una nueva instancia de esa clase
-            return StateClass(self)
-        else:
-            # 3. Si no se encuentra, retorna el estado de error y lanza una advertencia
-            print(f"ADVERTENCIA: ID de estado de Contrato desconocido: {db_id}. Inicializando en ContratoUnknownState.")
-            return ContratoUnknownState(self)
-
-    @property
-    def state(self) -> ContratoBaseState:
-        return self._state
-
-    @state.setter
-    def state(self, new_state: ContratoBaseState):
-        self._state = new_state
-        # Opcional: Persistir el nuevo ID de estado en el modelo
-        self.id_estado = self._state.get_db_id()
-
-        # ... (métodos de delegación: tomar_pago, tomar_retiro, etc.) ...

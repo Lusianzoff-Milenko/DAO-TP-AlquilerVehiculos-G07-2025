@@ -14,7 +14,7 @@ class TipoInconvenienteRepository:
         error = validate_string(tipo_inconveniente.nombre, 'nombre', max_length=50)
         if error:
             return error
-        error = validate_string(tipo_inconveniente.descripcion, 'descripcion', max_length=50)
+        error = validate_string(tipo_inconveniente.descripcion, 'descripcion', max_length=500)
         if error:
             return error
         return None

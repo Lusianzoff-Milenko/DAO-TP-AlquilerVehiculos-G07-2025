@@ -1,22 +1,13 @@
 from typing import Optional, List
 from domain.models.empleado import Empleado
 from data_access.repositories.empleado_repository import EmpleadoRepository
-from data_access.repositories.persona_repository import PersonaRepository
-from data_access.repositories.tipo_puesto_repository import TipoPuestoRepository
-from services.contrato_service import ContratoService
 from services.validation_mapper import ValidationMapper
 
 
 class EmpleadoService:
-    def __init__(self, empleado_repo: EmpleadoRepository, persona_repo: PersonaRepository, tipo_puesto_repo: TipoPuestoRepository, contrato_service: ContratoService):
+    def __init__(self, empleado_repo: EmpleadoRepository, mapper: ValidationMapper):
         self._repo = empleado_repo
-        self._contrato_service = contrato_service
-
-        repos_to_validate = {
-            'persona': persona_repo,
-            'tipo_puesto': tipo_puesto_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._mapper = mapper
 
 
     def create_empleado(self, empleado: Empleado) -> Optional[int]:

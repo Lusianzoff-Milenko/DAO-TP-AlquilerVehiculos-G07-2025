@@ -1,27 +1,13 @@
-# python
-# file: `application/services/inconveniente_service.py`
 from typing import Optional, List
 from domain.models.inconveniente import Inconveniente
 from data_access.repositories.inconveniente_repository import InconvenienteRepository
-
-# Assuming existence of repositories for foreign keys
-from data_access.repositories.tipo_inconveniente_repository import TipoInconvenienteRepository
-from data_access.repositories.contrato_repository import ContratoRepository
-from data_access.repositories.estado_repository import EstadoRepository
 from services.validation_mapper import ValidationMapper
 
 
 class InconvenienteService:
-    def __init__(self, inconveniente_repo: InconvenienteRepository,
-                 tipo_inconveniente_repo: TipoInconvenienteRepository, contrato_repo: ContratoRepository,
-                 estado_repo: EstadoRepository):
+    def __init__(self, inconveniente_repo: InconvenienteRepository, mapper: ValidationMapper):
         self._repo = inconveniente_repo
-        repos_to_validate = {
-            'tipo_inconveniente': tipo_inconveniente_repo,
-            'contrato': contrato_repo,
-            'estado': estado_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._mapper = mapper
 
     def create_inconveniente(self, inconveniente: Inconveniente) -> Optional[int]:
         if not self._mapper.validate_fk_exists('tipo_inconveniente', inconveniente.id_tipo_inconveniente,

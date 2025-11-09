@@ -154,3 +154,19 @@ class EstadoRepository:
         except Exception as e:
             print(f"Error retrieving estados by ambito: {e}")
             raise
+
+    def get_by_nombre_and_ambito(self, nombre: str, ambito: str) -> Estado | None:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT id, nombre, ambito
+                    FROM Estado WHERE nombre = ? AND ambito = ?
+                    """,
+                    (nombre, ambito),
+                )
+                row = cur.fetchone()
+                return self._row_to_estado(row)
+        except Exception as e:
+            print(f"Error retrieving estado by nombre and ambito: {e}")
+            raise

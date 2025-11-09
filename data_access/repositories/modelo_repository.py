@@ -1,6 +1,7 @@
 from typing import Optional, List
 from data_access.database_connector import Database
 from domain.models.modelo import Modelo
+from services.utils import validate_positive_int, validate_string
 
 
 class ModeloRepository:
@@ -8,23 +9,24 @@ class ModeloRepository:
         self._db = db or Database("./alquiler_vehiculos_data_base.db")
 
     def _validate_modelo(self, modelo: Modelo) -> Optional[str]:
-        if not isinstance(modelo.nombre, str) or not modelo.nombre.strip():
-            return "Invalid 'nombre' — must be a non-empty string"
-        if len(modelo.nombre) > 50:
-            return "Invalid 'nombre' — maximum length is 50 characters"
-        if not isinstance(modelo.id_marca, int) or modelo.id_marca <= 0:
-            return "Invalid 'id_marca' — must be a positive integer"
-        if not isinstance(modelo.cantidad_pasajeros, int) or modelo.cantidad_pasajeros <= 0:
-            return "Invalid 'cantidad_pasajeros' — must be a positive integer"
-        if not isinstance(modelo.cantidad_puertas, int) or modelo.cantidad_puertas <= 0:
-            return "Invalid 'cantidad_puertas' — must be a positive integer"
-        if not isinstance(modelo.motor, str) or not modelo.motor.strip():
-            return "Invalid 'motor' — must be a non-empty string"
-        if len(modelo.motor) > 50:
-            return "Invalid 'motor' — maximum length is 50 characters"
-        if not isinstance(modelo.anio_lanzamiento, str) or not modelo.anio_lanzamiento.strip():
-            # Note: The SQLAlchemy model defined it as DateTime but the type is String in the model.
-            return "Invalid 'anio_lanzamiento' — must be a non-empty string (representing year)"
+        error = validate_string(modelo.nombre, 'nombre', max_length=100)
+        if error:
+            return error
+        error = validate_positive_int(modelo.id_marca, 'id_marca')
+        if error:
+            return error
+        error = validate_positive_int(modelo.cantidad_pasajeros, 'cantidad_pasajeros')
+        if error:
+            return error
+        error = validate_positive_int(modelo.cantidad_puertas, 'cantidad_puertas')
+        if error:
+            return error
+        error = validate_string(modelo.motor, 'motor', max_length=50)
+        if error:
+            return error
+        error = validate_positive_int(modelo.anio_lanzamiento, 'anio_lanzamiento')
+        if error:
+            return error
         return None
 
     def _row_to_modelo(self, row) -> Modelo | None:

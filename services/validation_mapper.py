@@ -24,10 +24,13 @@ class ValidationMapper:
             print(f"Validation Error: {fk_name} debe ser un ID positivo.")
             return False
 
-        repo = self._repos.get(repo_key)
-        if not repo:
+        repo_provider = self._repos.get(repo_key)
+
+        if not repo_provider:
             print(f"System Error: Repositorio '{repo_key}' no disponible para validación.")
             return False
+
+        repo = repo_provider()
 
         if repo.get_by_id(fk_id):
             return True

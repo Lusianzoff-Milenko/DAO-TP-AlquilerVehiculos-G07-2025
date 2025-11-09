@@ -1,7 +1,8 @@
-from xmlrpc.client import DateTime
-from sqlalchemy import Column, Integer, String, ForeignKey
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
+from .marca import Marca
 
 
 
@@ -13,5 +14,5 @@ class Modelo(Base):
     cantidad_pasajeros: int = Column(Integer, nullable=False)
     cantidad_puertas: int = Column(Integer, nullable=False)
     motor: str = Column(String(50), nullable=False)
-    anio_lanzamiento: DateTime = Column(String, nullable=False, name="año_lanzamiento")
-    Marca = relationship('Marca')
+    anio_lanzamiento: datetime = Column(DateTime, nullable=False, name="año_lanzamiento")
+    Marca = relationship(Marca)

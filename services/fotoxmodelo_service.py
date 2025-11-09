@@ -1,19 +1,19 @@
 from typing import Optional, List
+
+from data_access.repositories import ModeloXColorRepository
 from domain.models.fotoXModelo import FotoXModelo
 from data_access.repositories.foto_x_modelo_repository import FotoXModeloRepository
-from data_access.repositories.modelo_repository import ModeloRepository
-from data_access.repositories.color_repository import ColorRepository
 from services.validation_mapper import ValidationMapper
 
 
 class FotoXModeloService:
-    def __init__(self, foto_repo: FotoXModeloRepository, modelo_repo: ModeloRepository, color_repo: ColorRepository):
+    def __init__(self,
+                 foto_repo: FotoXModeloRepository,
+                 mapper: ValidationMapper,
+                 modeloxcolor_repo: ModeloXColorRepository):
+        self._modeloxcolor_repo = modeloxcolor_repo
         self._repo = foto_repo
-        repos_to_validate = {
-            'modelo': modelo_repo,
-            'color': color_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._mapper = mapper
 
     def create_foto_x_modelo(self, foto: FotoXModelo) -> Optional[int]:
         if not self._mapper.validate_fk_exists('modelo', foto.id_modelo, 'id_modelo'): return None

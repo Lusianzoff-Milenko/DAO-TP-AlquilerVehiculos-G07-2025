@@ -1,15 +1,13 @@
 from typing import Optional, List
 from domain.models.modelo import Modelo
 from data_access.repositories.modelo_repository import ModeloRepository
-from data_access.repositories.marca_repository import MarcaRepository
 from services.validation_mapper import ValidationMapper
 
 
 class ModeloService:
-    def __init__(self, modelo_repo: ModeloRepository, marca_repo: MarcaRepository):
+    def __init__(self, modelo_repo: ModeloRepository, mapper: ValidationMapper):
         self._repo = modelo_repo
-        repos_to_validate = {'marca': marca_repo}
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._mapper = mapper
 
     def create_modelo(self, modelo: Modelo) -> Optional[int]:
         if not self._mapper.validate_fk_exists('marca', modelo.id_marca, 'id_marca'):

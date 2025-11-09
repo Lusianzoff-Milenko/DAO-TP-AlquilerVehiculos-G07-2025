@@ -1,25 +1,13 @@
-# python
-# file: `application/services/mantenimiento_service.py`
 from typing import Optional, List
 from domain.models.mantenimiento import Mantenimiento
-from data_access.repositories.mantenimiento_repository import MantenimientoRepository
-
-# Assuming existence of repositories for foreign keys
-from data_access.repositories.vehiculo_repository import VehiculoRepository
-from data_access.repositories.estado_repository import EstadoRepository
-from data_access.repositories.empleado_repository import EmpleadoRepository
 from services.validation_mapper import ValidationMapper
 
 
 class MantenimientoService:
-    def __init__(self, mantenimiento_repo: MantenimientoRepository, vehiculo_repo: VehiculoRepository, estado_repo: EstadoRepository, empleado_repo: EmpleadoRepository):
+    def __init__(self, mantenimiento_repo, vehiculo_service, mapper: ValidationMapper):
         self._repo = mantenimiento_repo
-        repos_to_validate = {
-            'vehiculo': vehiculo_repo,
-            'estado': estado_repo,
-            'empleado': empleado_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._vehiculo_service = vehiculo_service # Inyección de servicio
+        self._mapper = mapper
 
     def create_mantenimiento(self, mantenimiento: Mantenimiento) -> Optional[int]:
         if not self._mapper.validate_fk_exists('vehiculo', mantenimiento.id_vehiculo, 'id_vehiculo'): return None

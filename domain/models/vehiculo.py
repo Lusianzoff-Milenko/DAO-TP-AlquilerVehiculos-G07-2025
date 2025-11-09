@@ -1,10 +1,13 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import Type
-
+from typing import Any
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
-from ..states.vehiculo_states import VehiculoBaseState, VEHICULO_STATE_MAPPING, VehiculoUnknownState, VehiculoDisponible
+from ..states.vehiculo.state import State
+from .estado import Estado
+from .color import Color
+from .modelo import Modelo
 
 
 class Vehiculo(Base):
@@ -19,41 +22,34 @@ class Vehiculo(Base):
     precio_base: float = Column(Float, nullable=False)
     id_estado: int = Column(Integer, ForeignKey('Estado.id'), nullable=False)
 
-    Estado = relationship('Estado')
-    Modelo = relationship('Modelo')
-    Color = relationship('Color')
+    Estado = relationship(Estado)
+    Modelo = relationship(Modelo)
+    Color = relationship(Color)
 
-    _state: VehiculoBaseState = None
+    _state = None
 
-    def __init__(self, **kwargs):
-        # ... (inicialización y carga de estado) ...
-        super().__init__(**kwargs)
-        if self.id_estado:
-            self.state = self._load_state_from_id(self.id_estado)
-        else:
-            self.state = VehiculoDisponible(self)
+    def __init__(self, state: State, **kw: Any) -> None:
+        super().__init__(**kw)
+        self.transition_to(state)
+        self.set_estado()
 
-    # [CÓDIGO SOLICITADO]
-    def _load_state_from_id(self, db_id: int) -> VehiculoBaseState:
-        """
-        Mapea el ID de estado de la base de datos a la clase de estado correspondiente.
-        """
-        StateClass: Type[VehiculoBaseState] = VEHICULO_STATE_MAPPING.get(db_id)
+    def transition_to(self, state: State):
+        print(f"Vehiculo: Transicionando al estado {type(state).__name__}")
+        self._state = state
+        self._state.context = self
 
-        if StateClass:
-            return StateClass(self)
-        else:
-            print(f"ADVERTENCIA: ID de estado de Vehículo desconocido: {db_id}. Inicializando en VehiculoUnknownState.")
-            return VehiculoUnknownState(self)
+    def request1(self):
+        self._state.handle1()
 
-    @property
-    def state(self) -> VehiculoBaseState:
-        return self._state
+    def request2(self):
+        self._state.handle2()
 
-    @state.setter
-    def state(self, new_state: VehiculoBaseState):
-        self._state = new_state
-        # Persistir el nuevo ID de estado en el modelo
-        self.id_estado = self._state.get_db_id()
 
-        # ... (métodos de delegación) ...
+    def set_estado(self) -> None:
+        estado: Estado = self._state.set_estado(self)
+        self.id_estado = estado.id
+
+
+    def __str__(self) -> str:
+        return f"Vehiculo [id={self.id}, modelo={Modelo.nombre}, patente={self.patente}, nro_chasis={self.nro_chasis}, color={Color.nombre}, año_fabricacion={self.anio_fabricacion.year}, precio_base={self.precio_base}, estado={self._state.__class__.__name__}]"
+

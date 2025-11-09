@@ -10,18 +10,12 @@ class PersonaRepository:
         self._db = db or Database("./alquiler_vehiculos_data_base.db")
 
     def _validate_persona(self, persona: Persona) -> Optional[str]:
-        if not isinstance(persona.nombre, str) or not persona.nombre.strip():
-            return "Invalid 'nombre' — must be a non-empty string"
-        if not isinstance(persona.apellido, str) or not persona.apellido.strip():
-            return "Invalid 'apellido' — must be a non-empty string"
-        if persona.telefono is not None and not isinstance(persona.telefono, str):
-            return "Invalid 'telefono' — must be a non-empty string"
-        if persona.mail is not None and not isinstance(persona.mail, str):
-            return "Invalid 'mail' — must be a non-empty string"
-        if persona.direccion is not None and not isinstance(persona.direccion, str):
-            return "Invalid 'direccion' — must be a non-empty string"
-        if persona.fecha_nacimiento is not None and not isinstance(persona.fecha_nacimiento, datetime.datetime):
-            return "Invalid 'fecha_nacimiento' — must be non-empty datetime"
+        if not persona.nombre or not persona.apellido:
+            return "Nombre y apellido son obligatorios."
+        if persona.mail and "@" not in persona.mail:
+            return "Mail inválido."
+        if persona.fecha_nacimiento and persona.fecha_nacimiento > datetime.datetime.now():
+            return "Fecha de nacimiento no puede ser en el futuro."
         return None
 
     def _row_to_persona(self, row) -> Persona | None:

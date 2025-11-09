@@ -1,4 +1,6 @@
 from typing import Optional, List
+
+from data_access.repositories import ContratoRepository
 from domain.models.contrato import Contrato
 from domain.models.detalle_contrato import DetalleContrato
 from services.detalle_contrato_service import DetalleContratoService
@@ -7,18 +9,17 @@ from services.validation_mapper import ValidationMapper
 
 
 class ContratoService:
-    def __init__(self, contrato_repo, cliente_repo, vehiculo_repo, metodo_pago_repo, empleado_repo, estado_repo, estado_service: EstadoService, detalle_contrato_service: DetalleContratoService):
+    def __init__(
+        self,
+        contrato_repo: ContratoRepository,
+        estado_service: EstadoService,
+        detalle_contrato_service: DetalleContratoService,
+        validation_mapper: ValidationMapper  # <-- Inyectamos el mapper
+    ):
         self._repo = contrato_repo
         self._estado_service = estado_service
-        repos_to_validate = {
-            'cliente': cliente_repo,
-            'vehiculo': vehiculo_repo,
-            'metodo_pago': metodo_pago_repo,
-            'empleado': empleado_repo,
-            'estado': estado_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
-        self._detalle_service = detalle_contrato_service  # Inyectamos el servicio de detalle
+        self._detalle_service = detalle_contrato_service
+        self._mapper = validation_mapper  # <-- Asignación simple
 
     def create_contrato(self, contrato: Contrato, detalles_list: List[DetalleContrato]) -> Optional[int]:
         if not self._mapper.validate_fk_exists('cliente', contrato.id_cliente, 'id_cliente'): return None

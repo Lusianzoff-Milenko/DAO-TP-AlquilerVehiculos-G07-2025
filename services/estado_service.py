@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Iterable
 from domain.models.estado import Estado
 from data_access.repositories.estado_repository import EstadoRepository
 
@@ -6,8 +6,19 @@ class EstadoService:
     def __init__(self, estado_repo: EstadoRepository):
         self._repo = estado_repo
 
-    def create_estado(self, estado: Estado) -> Optional[int]:
-        return self._repo.create(estado)
+    def create_estado(self, estado: Estado) -> Estado:
+        """Create single Estado if not exists (by nombre + ambito). Commits."""
+        existing = self._repo.get_by_nombre_and_ambito(estado.nombre, estado.ambito)
+        if existing:
+            return existing
+        self._repo.create(estado)
+        return estado
+
+    def create_estados(self, estados: Iterable[Estado]) -> None:
+        """Batch create multiple Estados: add new ones, commit once."""
+        for estado in estados:
+            if not self._repo.get_by_nombre_and_ambito(estado.nombre, estado.ambito):
+                self._repo.create(estado)
 
     def get_estado_by_id(self, estado_id: int) -> Optional[Estado]:
         return self._repo.get_by_id(estado_id)
@@ -30,3 +41,6 @@ class EstadoService:
 
     def get_estado_by_ambito(self, ambito: str) -> List[Estado]:
         return self._repo.get_by_ambito(ambito)
+
+    def get_estado_by_name_and_ambito(self, name: str, ambito: str) -> Optional[Estado]:
+        return self._repo.get_by_nombre_and_ambito(name, ambito)

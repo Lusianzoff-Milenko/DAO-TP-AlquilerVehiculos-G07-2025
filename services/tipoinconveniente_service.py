@@ -1,5 +1,3 @@
-# python
-# file: `application/services/tipoinconveniente_service.py`
 from typing import Optional, List
 from domain.models.tipoInconveniente import TipoInconveniente
 from data_access.repositories.tipo_inconveniente_repository import TipoInconvenienteRepository

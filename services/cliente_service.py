@@ -1,22 +1,12 @@
 from typing import Optional, List
-
 from domain.models.cliente import Cliente
 from data_access.repositories.cliente_repository import ClienteRepository
-from .contrato_service import ContratoService
 from .validation_mapper import ValidationMapper
-from data_access.repositories.persona_repository import PersonaRepository
-from data_access.repositories.tipo_documento_repository import TipoDocumentoRepository
-class ClienteService:
-    def __init__(self, cliente_repo: ClienteRepository, persona_repo: PersonaRepository,
-                 tipo_documento_repo: TipoDocumentoRepository, contrato_service: ContratoService):
-        self._repo = cliente_repo
-        self._contrato_service = contrato_service
 
-        repos_to_validate = {
-            'persona': persona_repo,
-            'tipo_documento': tipo_documento_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+class ClienteService:
+    def __init__(self, cliente_repo: ClienteRepository, mapper: ValidationMapper):
+        self._repo = cliente_repo
+        self._mapper = mapper
 
     def create_cliente(self, cliente: Cliente) -> Optional[int]:
         if not self._mapper.validate_fk_exists('persona', cliente.id_persona, 'id_persona'):

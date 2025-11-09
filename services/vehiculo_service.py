@@ -1,24 +1,19 @@
 from typing import Optional, List
 from domain.models.vehiculo import Vehiculo
 from data_access.repositories.vehiculo_repository import VehiculoRepository
-from data_access.repositories.modelo_repository import ModeloRepository
-from data_access.repositories.color_repository import ColorRepository
-from data_access.repositories.estado_repository import EstadoRepository
 from services.contrato_service import ContratoService
 from services.validation_mapper import ValidationMapper
 
 
 class VehiculoService:
-    def __init__(self, vehiculo_repo: VehiculoRepository, modelo_repo: ModeloRepository, color_repo: ColorRepository,
-                 estado_repo: EstadoRepository, contrato_service: ContratoService):
+    def __init__(self,
+                 vehiculo_repo: VehiculoRepository,
+                 contrato_service: ContratoService,
+                 mapper: ValidationMapper):
+
         self._repo = vehiculo_repo
         self._contrato_service = contrato_service
-        repos_to_validate = {
-            'modelo': modelo_repo,
-            'color': color_repo,
-            'estado': estado_repo
-        }
-        self._mapper = ValidationMapper(repos_to_validate)
+        self._mapper = mapper  # Asignación del mapper inyectado
 
     def create_vehiculo(self, vehiculo: Vehiculo) -> Optional[int]:
         if not self._mapper.validate_fk_exists('modelo', vehiculo.id_modelo, 'id_modelo'): return None
@@ -51,3 +46,6 @@ class VehiculoService:
             return None
 
         return self._repo.delete(vehiculo_id)
+
+    def get_all_vehiculos(self) -> List[Vehiculo]:
+        return self._repo.list_all()

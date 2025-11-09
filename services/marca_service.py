@@ -1,5 +1,3 @@
-# python
-# file: `application/services/marca_service.py`
 from typing import Optional, List
 from domain.models.marca import Marca
 from data_access.repositories.marca_repository import MarcaRepository

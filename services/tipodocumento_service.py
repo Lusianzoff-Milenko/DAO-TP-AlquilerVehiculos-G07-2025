@@ -1,5 +1,3 @@
-# python
-# file: `application/services/tipodocumento_service.py`
 from typing import Optional, List
 from domain.models.tipoDocumento import TipoDocumento
 from data_access.repositories.tipo_documento_repository import TipoDocumentoRepository
