@@ -186,14 +186,14 @@ def main():
         empleado_service.create_empleado(empleado)
 
     # Crear vehiculos
-    vehiculos = [Vehiculo(state=Disponible(), id_modelo=1, patente="ABC123", nro_chasis="CHASIS001", id_color=1, anio_fabricacion=datetime(2020, 5, 17), precio_base=20000.0),
-                 Vehiculo(state=Disponible(), id_modelo=2, patente="DEF456", nro_chasis="CHASIS002", id_color=2, anio_fabricacion=datetime(2019, 8, 25), precio_base=30000.0),
-                 Vehiculo(state=Disponible(), id_modelo=3, patente="GHI789", nro_chasis="CHASIS003", id_color=3, anio_fabricacion=datetime(2021, 3, 10), precio_base=25000.0),
-                 Vehiculo(state=Disponible(), id_modelo=4, patente="JKL012", nro_chasis="CHASIS004", id_color=4, anio_fabricacion=datetime(2018, 11, 5), precio_base=35000.0),
-                 Vehiculo(state=Disponible(), id_modelo=5, patente="MNO345", nro_chasis="CHASIS005", id_color=5, anio_fabricacion=datetime(2022, 1, 15), precio_base=22000.0)]
+    vehiculos = [Vehiculo(id_modelo=1, patente="ABC123", nro_chasis="CHASIS001", id_color=1, anio_fabricacion=datetime(2020, 5, 17), precio_base=20000.0, id_estado = 1),
+                 Vehiculo(id_modelo=2, patente="DEF456", nro_chasis="CHASIS002", id_color=2, anio_fabricacion=datetime(2019, 8, 25), precio_base=30000.0, id_estado = 1),
+                 Vehiculo(id_modelo=3, patente="GHI789", nro_chasis="CHASIS003", id_color=3, anio_fabricacion=datetime(2021, 3, 10), precio_base=25000.0, id_estado = 1),
+                 Vehiculo(id_modelo=4, patente="JKL012", nro_chasis="CHASIS004", id_color=4, anio_fabricacion=datetime(2018, 11, 5), precio_base=35000.0, id_estado = 1),
+                 Vehiculo(id_modelo=5, patente="MNO345", nro_chasis="CHASIS005", id_color=5, anio_fabricacion=datetime(2022, 1, 15), precio_base=22000.0, id_estado = 1)]
     for v in vehiculos:
         print(f"Creando vehiculo: {v.patente} - Modelo ID: {v.id_modelo} - Color ID: {v.id_color}")
-        vehiculo_service.create_vehiculo(v, estado_service)
+        vehiculo_service.create_vehiculo(v)
 
 
     contrato_ejemplo = Contrato(

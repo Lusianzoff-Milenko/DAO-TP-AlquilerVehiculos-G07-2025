@@ -1,23 +1,28 @@
-from typing import Optional
-
-from domain.models.estado import Estado
-from domain.models.vehiculo import Vehiculo
-from services.containers.container import Container
-from domain.states.vehiculo.reservado import Reservado
 from domain.states.vehiculo.state import State
 
 
 class Disponible(State):
-    def handle1(self) -> None:
-        print("El vehículo está disponible para alquiler.")
-        print("Puede proceder a reservarlo o alquilarlo.")
-        self.context.transition_to(Reservado())
 
-    def handle2(self) -> None:
-        print("El vehículo ya está disponible, no se puede realizar esta acción.")
+    def reservar(self) -> None:
+        pass
 
-    def set_estado(self, contexto: Optional[Vehiculo]) -> Estado:
-        container = Container()
-        estado_service = container.estado_service()
-        estado = estado_service.get_estado_by_name_and_ambito(self.__class__.__name__, contexto.__class__.__name__)
-        return estado
+    def retirar(self) -> None:
+        pass
+
+    def entregar(self) -> None:
+        pass
+
+    def mover_a_revision(self) -> None:
+        pass
+
+    def iniciar_mantenimiento(self) -> None:
+        pass
+
+    def reincorporar(self):
+        pass
+
+    def marcar_fuera_de_servicio(self) -> None:
+        pass
+
+    def marcar_no_devolucion(self) -> None:
+        pass

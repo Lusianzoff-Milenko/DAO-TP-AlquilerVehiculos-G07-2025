@@ -1,7 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
-from domain.models.estado import Estado
 if TYPE_CHECKING:
     from domain.models.vehiculo import Vehiculo
 
@@ -26,13 +25,33 @@ class State(ABC):
         self._context = context
 
     @abstractmethod
-    def handle1(self) -> None:
+    def reservar(self) -> None:
         pass
 
     @abstractmethod
-    def handle2(self) -> None:
+    def retirar(self) -> None:
         pass
 
     @abstractmethod
-    def set_estado(self, context: Vehiculo) -> Estado:
+    def entregar(self) -> None:
+        pass
+
+    @abstractmethod
+    def mover_a_revision(self) -> None:
+        pass
+
+    @abstractmethod
+    def iniciar_mantenimiento(self) -> None:
+        pass
+
+    @abstractmethod
+    def reincorporar(self):
+        pass
+
+    @abstractmethod
+    def marcar_fuera_de_servicio(self) -> None:
+        pass
+
+    @abstractmethod
+    def marcar_no_devolucion(self) -> None:
         pass

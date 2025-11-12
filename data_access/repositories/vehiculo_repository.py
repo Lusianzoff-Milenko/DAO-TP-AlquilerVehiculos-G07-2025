@@ -35,7 +35,6 @@ class VehiculoRepository:
     def _row_to_vehiculo(self, row) -> Vehiculo | None:
         if row is None: return None
         print(row)
-        estado = self.IState.create_state(id_estado=row[7])
         return Vehiculo(
             id=row[0],
             id_modelo=row[1],
@@ -44,7 +43,7 @@ class VehiculoRepository:
             id_color=row[4],
             anio_fabricacion=iso_to_datetime(row[5]),
             precio_base=row[6],
-            state=estado,
+            id_estado=row[7],
         )
 
     def create(self, vehiculo: Vehiculo) -> Optional[int]:
@@ -52,6 +51,8 @@ class VehiculoRepository:
         if validation_error:
             print(f"Validation failed: {validation_error}")
             return None
+
+        print(vehiculo.get_state().__class__.__name__)
 
         try:
             anio_fabricacion_iso = datetime_to_iso(vehiculo.anio_fabricacion)
