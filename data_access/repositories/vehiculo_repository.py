@@ -1,13 +1,16 @@
 from typing import Optional, List
 import datetime
+
 from data_access.database_connector import Database
 from domain.models.vehiculo import Vehiculo
+from domain.states.vehiculo.state import State
 from services.utils import datetime_to_iso, iso_to_datetime, validate_positive_int, validate_string
 
 
 class VehiculoRepository:
-    def __init__(self, db: Optional[Database] = None):
+    def __init__(self, db: Optional[Database] = None, state: State = State):
         self._db = db or Database("./alquiler_vehiculos_data_base.db")
+        self.IState = state
 
     def _validate_vehiculo(self, vehiculo: Vehiculo) -> Optional[str]:
         error = validate_positive_int(vehiculo.id_modelo, 'id_modelo')
@@ -23,6 +26,7 @@ class VehiculoRepository:
         if not isinstance(vehiculo.precio_base, (float, int)) or vehiculo.precio_base <= 0:
             return "Invalid 'precio_base' — must be a positive number"
 
+        print("Validating id_estado:", vehiculo.id_estado)
         error = validate_positive_int(vehiculo.id_estado, 'id_estado')
         if error: return error
 
@@ -30,7 +34,8 @@ class VehiculoRepository:
 
     def _row_to_vehiculo(self, row) -> Vehiculo | None:
         if row is None: return None
-
+        print(row)
+        estado = self.IState.create_state(id_estado=row[7])
         return Vehiculo(
             id=row[0],
             id_modelo=row[1],
@@ -39,7 +44,7 @@ class VehiculoRepository:
             id_color=row[4],
             anio_fabricacion=iso_to_datetime(row[5]),
             precio_base=row[6],
-            id_estado=row[7],
+            state=estado,
         )
 
     def create(self, vehiculo: Vehiculo) -> Optional[int]:
@@ -92,8 +97,16 @@ class VehiculoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, id_modelo, patente, nro_chasis, color, año_fabricacion, precio_base, id_estado
-                    FROM Vehiculo WHERE id = ?
+                    SELECT id,
+                           id_modelo,
+                           patente,
+                           nro_chasis,
+                           color,
+                           año_fabricacion,
+                           precio_base,
+                           id_estado
+                    FROM Vehiculo
+                    WHERE id = ?
                     """,
                     (vehiculo_id,),
                 )

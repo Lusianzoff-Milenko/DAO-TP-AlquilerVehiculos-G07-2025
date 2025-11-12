@@ -11,8 +11,6 @@ class ContratoRepository:
     def _validate_contrato(self, contrato: Contrato) -> Optional[str]:
         error = validate_positive_int(contrato.id_cliente, 'id_cliente')
         if error: return error
-        error = validate_positive_int(contrato.id_vehiculo, 'id_vehiculo')
-        if error: return error
         error = validate_positive_int(contrato.id_metodo_de_pago, 'id_metodo_de_pago')
         if error: return error
         error = validate_positive_int(contrato.id_empleado, 'id_empleado')
@@ -28,13 +26,12 @@ class ContratoRepository:
         return Contrato(
             id=row[0],
             id_cliente=row[1],
-            id_vehiculo=row[2],
-            fecha_desde=iso_to_datetime(row[3]),
-            fecha_hasta=iso_to_datetime(row[4]),
-            id_metodo_de_pago=row[5],
-            id_empleado=row[6],
-            id_estado=row[7],
-            tiene_seguro=bool(row[8]),
+            fecha_desde=iso_to_datetime(row[2]),
+            fecha_hasta=iso_to_datetime(row[3]),
+            id_metodo_de_pago=row[4],
+            id_empleado=row[5],
+            id_estado=row[6],
+            tiene_seguro=bool(row[7]),
         )
 
     def create(self, contrato: Contrato) -> Optional[int]:
@@ -47,10 +44,10 @@ class ContratoRepository:
                 # ...
                 cur.execute(
                     """
-                    INSERT INTO Contrato (id_cliente, id_vehiculo, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO Contrato (id_cliente, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (contrato.id_cliente, contrato.id_vehiculo, fecha_desde_iso, fecha_hasta_iso, contrato.id_metodo_de_pago, contrato.id_empleado, contrato.id_estado, 1 if contrato.tiene_seguro else 0),
+                    (contrato.id_cliente, fecha_desde_iso, fecha_hasta_iso, contrato.id_metodo_de_pago, contrato.id_empleado, contrato.id_estado, 1 if contrato.tiene_seguro else 0),
                 )
                 return cur.lastrowid
         except Exception as e:
@@ -62,7 +59,7 @@ class ContratoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, id_cliente, id_vehiculo, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro
+                    SELECT id, id_cliente, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro
                     FROM Contrato WHERE id = ?
                     """,
                     (contrato_id,),
@@ -78,7 +75,7 @@ class ContratoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, id_cliente, id_vehiculo, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro
+                    SELECT id, id_cliente, fecha_desde, fecha_hasta, id_metodoDePago, id_empleado, id_estado, tiene_seguro
                     FROM Contrato ORDER BY id
                     """
                 )
@@ -98,10 +95,10 @@ class ContratoRepository:
                 cur.execute(
                     """
                     UPDATE Contrato
-                    SET id_cliente = ?, id_vehiculo = ?, fecha_desde = ?, fecha_hasta = ?, id_metodoDePago = ?, id_empleado = ?, id_estado = ?, tiene_seguro = ?
+                    SET id_cliente = ?,, fecha_desde = ?, fecha_hasta = ?, id_metodoDePago = ?, id_empleado = ?, id_estado = ?, tiene_seguro = ?
                     WHERE id = ?
                     """,
-                    (contrato.id_cliente, contrato.id_vehiculo, fecha_desde_iso, fecha_hasta_iso, contrato.id_metodo_de_pago, contrato.id_empleado, contrato.id_estado, 1 if contrato.tiene_seguro else 0, contrato.id),
+                    (contrato.id_cliente, fecha_desde_iso, fecha_hasta_iso, contrato.id_metodo_de_pago, contrato.id_empleado, contrato.id_estado, 1 if contrato.tiene_seguro else 0, contrato.id),
                 )
                 return cur.rowcount > 0
         except Exception as e:

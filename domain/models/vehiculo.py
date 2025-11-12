@@ -30,13 +30,22 @@ class Vehiculo(Base):
 
     def __init__(self, state: State, **kw: Any) -> None:
         super().__init__(**kw)
-        self.transition_to(state)
-        self.set_estado()
+        # 1. Asigna directamente el estado para inicializar el objeto.
+        self._state = state
+        if self._state:
+            self._state.context = self
+        # La lógica de transición no se ejecuta, por lo que no hay UPDATE de DB.
 
     def transition_to(self, state: State):
-        print(f"Vehiculo: Transicionando al estado {type(state).__name__}")
-        self._state = state
-        self._state.context = self
+        print(state, self._state)
+        # 2. Elimina la comprobación 'self._state is None' de la transición.
+        #    Ahora solo se ejecuta en cambios reales de estado.
+        if self._state.__class__ != state.__class__:
+            print(f"Vehiculo: Transicionando al estado {type(state).__name__}")
+            self._state = state
+            self._state.context = self
+            # ... (Aquí va la lógica de persistencia del estado si la hay)
+        self.set_estado()
 
     def request1(self):
         self._state.handle1()

@@ -13,7 +13,6 @@ class Contrato(Base):
     __allow_unmapped__ = True
     id: int = Column(Integer, primary_key=True, autoincrement=True)
     id_cliente: int = Column(Integer, ForeignKey('Cliente.id'), nullable=False)
-    id_vehiculo: int = Column(Integer, ForeignKey('Vehiculo.id'), nullable=False)
     fecha_desde: datetime = Column(DateTime, nullable=False, default=datetime.now())
     fecha_hasta: datetime = Column(DateTime, nullable=False)
     id_metodo_de_pago: int = Column(Integer, ForeignKey('MetodoDePago.id'), nullable=False, name='id_metodoDePago')
@@ -26,7 +25,6 @@ class Contrato(Base):
         cascade="all, delete-orphan",
     )
     Cliente = relationship("Cliente")
-    Vehiculo = relationship("Vehiculo")
     MetodoDePago = relationship("MetodoDePago")
     Estado = relationship("Estado")
     Empleado = relationship("Empleado")

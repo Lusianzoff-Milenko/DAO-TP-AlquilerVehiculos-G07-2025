@@ -1,15 +1,21 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
-
 from domain.models.estado import Estado
-
 if TYPE_CHECKING:
     from domain.models.vehiculo import Vehiculo
 
 class State(ABC):
 
     _context: Optional['Vehiculo'] = None
+
+    @staticmethod
+    def create_state(id_estado: int) -> 'State':
+        from domain.states.vehiculo.disponible import Disponible
+        if id_estado == 1:
+            return Disponible()
+        else:
+            raise ValueError(f"Estado with id {id_estado} not recognized.")
 
     @property
     def context(self) -> Vehiculo:

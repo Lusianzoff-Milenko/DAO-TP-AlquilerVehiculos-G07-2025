@@ -46,6 +46,15 @@ class Container(containers.DeclarativeContainer):
     # --- Tu Validación ---
     # Este es un buen candidato para un Factory,
     # ya que es una dependencia de tu servicio.
+
+    detalle_contrato_validation_mapper = providers.Factory(
+        ValidationMapper,
+        repositories={
+            'contrato': contrato_repo,
+            'vehiculo': vehiculo_repo,
+        }
+    )
+
     empleado_validation_mapper = providers.Factory(
         ValidationMapper,
         repositories={
@@ -75,13 +84,6 @@ class Container(containers.DeclarativeContainer):
             'metodo_pago': metodo_pago_repo,
             'empleado': empleado_repo,
             'estado': estado_repo
-        }
-    )
-
-    detalle_contrato_validation_mapper = providers.Factory(
-        ValidationMapper,
-        repositories={
-            'contrato': contrato_repo,
         }
     )
 
@@ -202,16 +204,10 @@ class Container(containers.DeclarativeContainer):
         estado_repo=estado_repo  # <-- ¡Añadido!
     )
 
-    detalle_contrato_service = providers.Factory(
-        DetalleContratoService,
-        detalle_repo=detalle_contrato_repo,
-        contrato_repo=contrato_repo)
-
     contrato_service = providers.Factory(
         ContratoService,
         contrato_repo=contrato_repo,
         estado_service=estado_service,
-        detalle_contrato_service=detalle_contrato_service,
         validation_mapper=contrato_validation_mapper  # <-- Le pasamos el nuevo mapper
     )
 
@@ -235,4 +231,12 @@ class Container(containers.DeclarativeContainer):
         mantenimiento_repo=mantenimiento_repo,
         vehiculo_service=vehiculo_service,  # Inyección del servicio de vehículo
         mapper=mantenimiento_validation_mapper
+    )
+
+    detalle_contrato_service = providers.Factory(
+        DetalleContratoService,
+        detalle_repo=detalle_contrato_repo,
+        contrato_repo=contrato_repo,
+        vehiculo_repo=vehiculo_repo,  # <-- NECESARIO
+        mapper=detalle_contrato_validation_mapper  # <-- NECESARIO (Asegúrate de que esté definido)
     )

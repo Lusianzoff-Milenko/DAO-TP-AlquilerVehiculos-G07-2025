@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import List
 
 from domain.models.cliente import Cliente
 from domain.models.color import Color
+from domain.models.contrato import Contrato
+from domain.models.detalle_contrato import DetalleContrato
 from domain.models.empleado import Empleado
 from domain.models.estado import Estado
 from domain.models.fotoXModelo import FotoXModelo
@@ -34,6 +37,7 @@ def main():
     fotoxmodelo_service = container.fotoxmodelo_service()
     modeloxcolor_service = container.modeloxcolor_service()
     metodoDeMedopago_service = container.metodo_pago_service()
+    contrato_service = container.contrato_service()
 
     # Crar estados
     estados = [Estado(nombre=name, ambito=ambito.value) for name, ambito in EstadosPoblador.__members__.items()]
@@ -189,18 +193,50 @@ def main():
                  Vehiculo(state=Disponible(), id_modelo=5, patente="MNO345", nro_chasis="CHASIS005", id_color=5, anio_fabricacion=datetime(2022, 1, 15), precio_base=22000.0)]
     for v in vehiculos:
         print(f"Creando vehiculo: {v.patente} - Modelo ID: {v.id_modelo} - Color ID: {v.id_color}")
-        vehiculo_service.create_vehiculo(v)
+        vehiculo_service.create_vehiculo(v, estado_service)
 
 
-    #Create Contratos
-    contratos = [
-        # (id_cliente, id_vehiculo, fecha_inicio, fecha_fin, id_metodo_de_pago, id_empleado, id_estado, tiene_seguro)
-        (1, 1, datetime(2023, 1, 10), datetime(2023, 1, 20), 1, 1, 1, True),
-        (2, 2, datetime(2023, 2, 5), datetime(2023, 2, 15), 2, 2, 1, False),
-        (3, 3, datetime(2023, 3, 12), datetime(2023, 3, 22), 3, 3, 1, True),
+    contrato_ejemplo = Contrato(
+        id_cliente=1,
+        fecha_desde=datetime(2025, 5, 1),
+        fecha_hasta=datetime(2025, 5, 10),
+        id_metodo_de_pago=1,
+        id_empleado=1,
+        # Asumiendo que el ID 9 es un estado 'Activo' o 'En Curso'
+        id_estado=9,
+        tiene_seguro=True
+    )
+
+    # 2. Definir la lista de Detalles del Contrato (los vehículos alquilados)
+    # NOTA: NO asignamos el id_contrato. El servicio lo hace automáticamente.
+    detalles_ejemplo: List[DetalleContrato] = [
+        DetalleContrato(
+            # id_contrato= El servicio lo asignará (debe ser None al inicio)
+            id_vehiculo=1,  # Alquila el Vehículo con ID 1
+            monto=5000.0,
+            fecha_retiro=datetime(2025, 5, 1),
+            fecha_entrega=datetime(2025, 5, 10),
+        ),
+        DetalleContrato(
+            # id_contrato= El servicio lo asignará
+            id_vehiculo=2,  # Alquila el Vehículo con ID 2
+            monto=7500.0,
+            fecha_retiro=datetime(2025, 5, 1),
+            fecha_entrega=datetime(2025, 5, 10),
+        )
     ]
 
+    # 3. Llamar al nuevo método del servicio
+    nuevo_contrato_id = contrato_service.crear_contrato_con_detalles(
+        contrato=contrato_ejemplo,
+        detalles=detalles_ejemplo,
+        detalles_service=container.detalle_contrato_service()
+    )
 
+    if nuevo_contrato_id:
+        print(f"✅ Nuevo Contrato con detalles creado exitosamente. ID: {nuevo_contrato_id}")
+    else:
+        print("❌ Falló la creación del Contrato o sus detalles.")
 
 if __name__ == '__main__':
     main()

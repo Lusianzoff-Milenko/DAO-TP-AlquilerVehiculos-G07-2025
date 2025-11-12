@@ -16,11 +16,12 @@ class DetalleContratoRepository:
         if error: return error
         error = validate_non_negative_number(detalle_contrato.monto, 'monto')
         if error: return error
+        error = validate_positive_int(detalle_contrato.id_vehiculo, 'id_vehiculo')
+        if error: return error
         if not isinstance(detalle_contrato.fecha_entrega, datetime.datetime):
             return "Invalid 'fecha_entrega' — must be a datetime object"
         if not isinstance(detalle_contrato.fecha_retiro, datetime.datetime):
             return "Invalid 'fecha_retiro' — must be a datetime object"
-
         return None
 
     def _row_to_detalle_contrato(self, row) -> DetalleContrato | None:
@@ -28,9 +29,10 @@ class DetalleContratoRepository:
         return DetalleContrato(
             id=row[0],
             id_contrato=row[1],
-            monto=row[2],
-            fecha_entrega=iso_to_datetime(row[3]),
-            fecha_retiro=iso_to_datetime(row[4]),
+            id_vehiculo=row[2],
+            monto=row[3],
+            fecha_entrega=iso_to_datetime(row[4]),
+            fecha_retiro=iso_to_datetime(row[5]),
         )
 
     def create(self, detalle_contrato: DetalleContrato) -> Optional[int]:
@@ -46,11 +48,12 @@ class DetalleContratoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    INSERT INTO DetalleContrato (id_contrato, monto, fecha_entrega, fecha_retiro)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO DetalleContrato (id_contrato, id_vehiculo, monto, fecha_entrega, fecha_retiro)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
                     (
                         detalle_contrato.id_contrato,
+                        detalle_contrato.id_vehiculo,
                         detalle_contrato.monto,
                         fecha_entrega_iso,
                         fecha_retiro_iso,
@@ -66,7 +69,7 @@ class DetalleContratoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, id_contrato, monto, fecha_entrega, fecha_retiro
+                    SELECT id, id_contrato, id_vehiculo, monto, fecha_entrega, fecha_retiro
                     FROM DetalleContrato WHERE id = ?
                     """,
                     (detalle_contrato_id,),
@@ -82,7 +85,7 @@ class DetalleContratoRepository:
             with self._db.transaction() as cur:
                 cur.execute(
                     """
-                    SELECT id, id_contrato, monto, fecha_entrega, fecha_retiro
+                    SELECT id, id_contrato, id_vehiculo, monto, fecha_entrega, fecha_retiro
                     FROM DetalleContrato ORDER BY id
                     """
                 )
@@ -104,11 +107,12 @@ class DetalleContratoRepository:
                 cur.execute(
                     """
                     UPDATE DetalleContrato
-                    SET id_contrato = ?, monto = ?, fecha_entrega = ?, fecha_retiro = ?
+                    SET id_contrato = ?, id_vehiculo = ?, monto = ?, fecha_entrega = ?, fecha_retiro = ?
                     WHERE id = ?
                     """,
                     (
                         detalle_contrato.id_contrato,
+                        detalle_contrato.id_vehiculo,
                         detalle_contrato.monto,
                         fecha_entrega_iso,
                         fecha_retiro_iso,

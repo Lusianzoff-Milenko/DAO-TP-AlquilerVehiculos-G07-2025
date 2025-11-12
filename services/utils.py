@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Union, Any
+from typing import Optional, Any
 
 DB_DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f" # Formato ISO estándar para SQLite
 
