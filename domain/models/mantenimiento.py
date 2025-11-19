@@ -15,6 +15,11 @@ class Mantenimiento(Base):
     id_empleado: int = Column(Integer, ForeignKey("Empleado.id"))
     fecha_hora: datetime = Column(DateTime, nullable=False, default=datetime.now())
 
-    Vehiculo = relationship("Vehiculo")
+    Vehiculo = relationship("Vehiculo", back_populates="mantenimientos")
     Estado = relationship("Estado")
     Empleado = relationship("Empleado")
+
+    def get_last_maintenance(self):
+        if self.fecha_hora.month >= datetime.now().month - 6:
+            return self
+        return None

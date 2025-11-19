@@ -1,18 +1,31 @@
-from typing import Optional
-
-from domain.models.estado import Estado
-from domain.models.vehiculo import Vehiculo
+from domain.models.contrato import Contrato
 from domain.states.vehiculo.state import State
 
 
 class Reservado(State):
-    def set_estado(self, context: Optional[Vehiculo]) -> Estado:
+    def marcar_disponible(self) -> None:
         pass
 
-    def handle1(self) -> None:
-        print("El vehículo está reservado.")
-        print("No puede ser reservado nuevamente hasta que se libere.")
+    def reservar(self, contrato: Contrato) -> None:
+        pass
 
-    def handle2(self) -> None:
-        print("El vehículo reservado ahora está siendo alquilado.")
-        # Aquí podrías agregar la transición a otro estado, como Alquilado
+    def retirar(self) -> None:
+        pass
+
+    def entregar(self) -> None:
+        pass
+
+    def mover_a_revision(self) -> None:
+        pass
+
+    def iniciar_mantenimiento(self) -> None:
+        pass
+
+    def reincorporar(self):
+        pass
+
+    def marcar_fuera_de_servicio(self) -> None:
+        pass
+
+    def marcar_no_devolucion(self) -> None:
+        pass

@@ -1,9 +1,10 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship
 from .base import Base
+from .mantenimiento import Mantenimiento
 from ..states.vehiculo.state import State
 from .estado import Estado
 from .color import Color
@@ -21,7 +22,7 @@ class Vehiculo(Base):
     anio_fabricacion: datetime = Column(DateTime, default=datetime.now(), name="año_fabricacion")
     precio_base: float = Column(Float, nullable=False)
     id_estado: int = Column(Integer, ForeignKey('Estado.id'), nullable=False)
-
+    mantenimientos: List[Mantenimiento] = relationship("Mantenimiento", back_populates="Vehiculo")
     Estado = relationship(Estado)
     Modelo = relationship(Modelo)
     Color = relationship(Color)
@@ -34,6 +35,8 @@ class Vehiculo(Base):
     def __init__(self, **kw: Any) -> None:
         super().__init__(**kw)
         # 1. Asigna directamente el estado para inicializar el objeto.
+        if self.id_estado is None:
+            self.id_estado = 1
         state = State.create_state(self.id_estado)
         self._state = state
         if self._state:
@@ -49,6 +52,10 @@ class Vehiculo(Base):
             self._state = state
             self._state.context = self
             # ... (Aquí va la lógica de persistencia del estado si la hay)
+
+    def agregar_mantenimiento(self, mantenimiento: Mantenimiento) -> None:
+        self.mantenimientos.append(mantenimiento)
+        mantenimiento.Vehiculo = self
 
     def __str__(self) -> str:
         return f"Vehiculo [id={self.id}, modelo={Modelo.nombre}, patente={self.patente}, nro_chasis={self.nro_chasis}, color={Color.nombre}, año_fabricacion={self.anio_fabricacion.year}, precio_base={self.precio_base}, estado={self._state.__class__.__name__}]"
