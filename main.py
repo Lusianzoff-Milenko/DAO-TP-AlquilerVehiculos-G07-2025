@@ -19,9 +19,6 @@ def main():
     persona_repository.create(persona)
 
 if __name__ == "__main__":
-    # Descomenta la siguiente línea si quieres ejecutar la lógica de negocio:
-    # main()
-    
-    # Lanza la interfaz gráfica:
+
     run_app()
 
