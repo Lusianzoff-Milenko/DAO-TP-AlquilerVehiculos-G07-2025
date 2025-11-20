@@ -47,8 +47,8 @@ def _on_enter(sender, app_data):
         _do_login()
 
 def register():
-    # contenedor a pantalla completa dentro de root
-    with dpg.child_window(tag=_TAG, parent="root", show=True, width=-1, height=-1):
+    # contenedor a pantalla completa dentro de content_area
+    with dpg.child_window(tag=_TAG, parent="content_area", show=True, width=-1, height=-1):
         dpg.add_spacer(height=12)
         # panel centrado
         with dpg.group(horizontal=False):
