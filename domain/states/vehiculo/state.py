@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from domain.models.contrato import Contrato
+from domain.models.estado import Estado
 
 if TYPE_CHECKING:
     from domain.models.vehiculo import Vehiculo
@@ -12,12 +13,12 @@ class State(ABC):
     _context: Optional['Vehiculo'] = None
 
     @staticmethod
-    def create_state(id_estado: int) -> 'State':
+    def create_state(estado: Estado) -> 'State':
         from domain.states.vehiculo.disponible import Disponible
-        if id_estado == 1:
+        if estado.id == 1:
             return Disponible()
         else:
-            raise ValueError(f"Estado with id {id_estado} not recognized.")
+            raise ValueError(f"Estado with id {estado.id} not recognized.")
 
     @property
     def context(self) -> Vehiculo:
@@ -26,6 +27,7 @@ class State(ABC):
     @context.setter
     def context(self, context: Vehiculo) -> None:
         self._context = context
+
 
     @abstractmethod
     def reservar(self, contrato: Contrato) -> None:
@@ -48,7 +50,7 @@ class State(ABC):
         pass
 
     @abstractmethod
-    def reincorporar(self):
+    def reincorporar(self, razon: str) -> None:
         pass
 
     @abstractmethod

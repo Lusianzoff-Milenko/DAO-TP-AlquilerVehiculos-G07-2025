@@ -34,3 +34,22 @@ class MantenimientoService:
 
     def delete_mantenimiento(self, mantenimiento_id: int) -> bool:
         return self._repo.delete(mantenimiento_id)
+
+    def iniciar_nuevo_mantenimiento(self, id_vehiculo: int, costo: float, descripcion: str, id_empleado: int) -> \
+    Optional[int]:
+
+        estado_diagnostico = self._estado_service.get_estado_by_name_and_ambito('en diagnostico', 'Mantenimiento')
+
+        if not estado_diagnostico:
+            print("Error: No se encontró el estado 'en diagnostico' para Mantenimiento.")
+            return None
+
+        mantenimiento = Mantenimiento(
+            id_vehiculo=id_vehiculo,
+            costo=costo,
+            descripcion=descripcion,
+            id_estado=estado_diagnostico.id,  # 🚨 ID del estado inicial del Mantenimiento
+            id_empleado=id_empleado,
+        )
+
+        return self.create_mantenimiento(mantenimiento)

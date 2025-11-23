@@ -1,11 +1,29 @@
+from domain.models.contrato import Contrato
 from domain.states.vehiculo.state import State
 
 
 class EnMantenimiento(State):
-    def handle1(self) -> None:
-        print("El vehículo está en mantenimiento.")
-        print("No puede ser alquilado o reservado hasta que se complete el mantenimiento.")
 
-    def handle2(self) -> None:
-        print("El mantenimiento del vehículo ha sido completado y ahora está disponible.")
-        # Aquí podrías agregar la transición a otro estado, como Disponible
+    def reservar(self, contrato: Contrato) -> None:
+        print("El vehículo está en mantenimiento y no puede ser reservado.")
+
+    def retirar(self, contrato: Contrato) -> None:
+        print("El vehículo está en mantenimiento y no puede ser retirado.")
+
+    def entregar(self) -> None:
+        print("El vehículo está en mantenimiento y no puede ser entregado.")
+
+    def mover_a_revision(self) -> None:
+        print("El vehiculo ya fue revisado.")
+
+    def iniciar_mantenimiento(self) -> None:
+        print("El vehículo ya está en mantenimiento.")
+
+    def reincorporar(self, razon: str) -> None:
+        pass
+
+    def marcar_fuera_de_servicio(self) -> None:
+        pass
+
+    def marcar_no_devolucion(self) -> None:
+        pass

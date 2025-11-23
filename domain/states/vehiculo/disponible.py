@@ -1,8 +1,7 @@
 from datetime import datetime
-
 from domain.models.contrato import Contrato
-from domain.models.mantenimiento import Mantenimiento
 from domain.states.vehiculo.alquilado import Alquilado
+from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
 from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 from domain.states.vehiculo.reservado import Reservado
 from domain.states.vehiculo.state import State
@@ -17,23 +16,23 @@ class Disponible(State):
 
     def retirar(self, contrato: Contrato) -> None:
         if contrato.fecha_desde.date() == datetime.now().date() and contrato.fecha_hasta.hour <= datetime.now().hour:
-            print("El vehiculo fue retirado de la playa de estacionamienot por el cliente.")
+            print("El vehiculo fue retirado de la playa de estacionamiento por el cliente.")
             self.context.transition_to(Alquilado())
 
     def entregar(self) -> None:
-        pass
+        print("Un vehiculo disponible no puede ser entregado.")
 
     def mover_a_revision(self) -> None:
-        pass
+        print("Un vehiculo disponible no puede ser movido a revision.")
 
     def iniciar_mantenimiento(self) -> None:
         for mantenimiento in self.context.mantenimientos:
             if mantenimiento.get_last_maintenance() is not None:
                 print("El vehiculo ha sido enviado a mantenimiento.")
-                self.context.transition_to(Mantenimiento())
+                self.context.transition_to(EnMantenimiento())
 
-    def reincorporar(self):
-        raise "El vehiculo ya se encuentra disponible."
+    def reincorporar(self, razon:str):
+        print("El vehiculo ya se encuentra disponible.")
 
     def marcar_fuera_de_servicio(self) -> None:
         if self.context.anio_fabricacion.year > datetime.now().year - 15:
@@ -41,4 +40,4 @@ class Disponible(State):
             self.context.transition_to(FueraDeServicio())
 
     def marcar_no_devolucion(self) -> None:
-        pass
+        print("Un vehiculo disponible no puede ser marcado como no devolucion.")

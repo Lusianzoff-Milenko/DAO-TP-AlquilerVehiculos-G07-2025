@@ -1,31 +1,33 @@
 from domain.models.contrato import Contrato
+from domain.states.vehiculo.entregado import Entregado
+from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 from domain.states.vehiculo.state import State
 
 
 class Alquilado(State):
-    def marcar_disponible(self) -> None:
-        pass
 
     def reservar(self, contrato: Contrato) -> None:
-        pass
+        print("El vehiculo ya se encuentra alquilado, no puede ser reservado.")
 
     def retirar(self, contrato: Contrato) -> None:
-        pass
+        print("Un vehiculo ya se encuentra alquilado, no puede ser retirado nuevamente.")
 
     def entregar(self) -> None:
-        pass
+        print("El cliente ha devuelto el vehiculo alquilado.")
+        self.context.transition_to(Entregado())
 
     def mover_a_revision(self) -> None:
-        pass
+        print("Un vehiculo alquilado no puede ser movido a revision directamente.")
 
     def iniciar_mantenimiento(self) -> None:
-        pass
+        print("Un vehiculo alquilado no puede ser enviado a mantenimiento directamente.")
 
-    def reincorporar(self):
-        pass
+    def reincorporar(self, razon: str) -> None:
+        print("Un vehículo alquilado no puede ser marcado como disponible directamente.")
 
     def marcar_fuera_de_servicio(self) -> None:
-        pass
+        print("Un vehículo alquilado no puede ser marcado como fuera de servicio directamente.")
 
     def marcar_no_devolucion(self) -> None:
-        pass
+        print("El vehiculo no fue devuelto por el cliente.")
+        self.context.transition_to(FueraDeServicio())

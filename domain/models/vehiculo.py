@@ -28,6 +28,7 @@ class Vehiculo(Base):
     Color = relationship(Color)
 
     _state = None
+    estados_disponibles: List[Estado] = []
 
     def get_state(self) -> State:
         return self._state
@@ -37,21 +38,26 @@ class Vehiculo(Base):
         # 1. Asigna directamente el estado para inicializar el objeto.
         if self.id_estado is None:
             self.id_estado = 1
-        state = State.create_state(self.id_estado)
+        state = State.create_state(self.Estado)
         self._state = state
         if self._state:
             self._state.context = self
         # La lógica de transición no se ejecuta, por lo que no hay UPDATE de DB.
 
     def transition_to(self, state: State):
-        print(state, self._state)
-        # 2. Elimina la comprobación 'self._state is None' de la transición.
-        #    Ahora solo se ejecuta en cambios reales de estado.
         if self._state.__class__ != state.__class__:
             print(f"Vehiculo: Transicionando al estado {type(state).__name__}")
             self._state = state
             self._state.context = self
-            # ... (Aquí va la lógica de persistencia del estado si la hay)
+            nuevo_estado_nombre = type(state).__name__
+            encontrado = False
+            for estado in self.estados_disponibles:
+                if estado.nombre == nuevo_estado_nombre:
+                    self.id_estado = estado.id
+                    encontrado = True
+                    break
+            if not encontrado:
+                print(f"¡ADVERTENCIA! ID de estado NO encontrado en la lista inyectada para: '{nuevo_estado_nombre}'.")
 
     def agregar_mantenimiento(self, mantenimiento: Mantenimiento) -> None:
         self.mantenimientos.append(mantenimiento)
