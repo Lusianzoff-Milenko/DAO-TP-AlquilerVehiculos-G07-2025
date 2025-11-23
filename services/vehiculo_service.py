@@ -209,5 +209,61 @@ class VehiculoService:
             print("Error: Falló la creación del registro de Mantenimiento.")
             return None
 
+    # Nuevo método en services/vehiculo_service.py
+
+    def finalizar_mantenimiento_vehiculo(self, vehiculo_id: int) -> bool:
+        """
+        Verifica el estado del último mantenimiento finalizado del vehículo (Reparado o NoReparado)
+        y ejecuta la transición correspondiente del vehículo (Disponible o FueraDeServicio).
+        """
+        vehiculo = self._repo.get_by_id(vehiculo_id)
+        if vehiculo is None:
+            print(f"Error: Vehículo con ID {vehiculo_id} no encontrado.")
+            return False
+
+        # 1. Inyección de estados
+        vehiculo.estados_disponibles = self._estados_vehiculo
+
+        # 2. Validar estado actual del vehículo
+        if vehiculo.get_state().__class__.__name__ != 'EnMantenimiento':
+            print(
+                f"Error: El vehículo {vehiculo_id} no está en EnMantenimiento. Estado actual: {vehiculo.get_state().__class__.__name__}")
+            return False
+
+        # 3. Obtener el último registro de Mantenimiento finalizado
+        # (ASUMIMOS la existencia de este método en MantenimientoService)
+        mantenimiento_finalizado = self._mantenimiento_service.get_last_finalized_mantenimiento_by_vehiculo_id(
+            vehiculo_id)
+
+        if mantenimiento_finalizado is None:
+            print(
+                "Error: No se encontró un registro de Mantenimiento FINALIZADO ('Reparado' o 'NoReparado') para el vehículo.")
+            return False
+
+        # 4. Obtener el nombre del estado final del Mantenimiento
+        estado_mantenimiento_obj = self._estado_service.get_estado_by_id(mantenimiento_finalizado.id_estado)
+        estado_mantenimiento_nombre = estado_mantenimiento_obj.nombre.lower() if estado_mantenimiento_obj else None
+
+        # 5. Lógica de Decisión y Transición
+
+        if estado_mantenimiento_nombre == 'reparado':
+            # Transición 1: Mantenimiento OK -> Vehículo Disponible
+            print(f"Mantenimiento {mantenimiento_finalizado.id} fue 'Reparado'. Reincorporando vehículo.")
+            vehiculo.get_state().reincorporar(razon="Mantenimiento finalizado con éxito.")
+            self._repo.update(vehiculo)
+            return True
+
+        elif estado_mantenimiento_nombre == 'no reparado':
+            # Transición 2: Mantenimiento fallido -> Vehículo Fuera de Servicio (Desechado)
+            print(f"Mantenimiento {mantenimiento_finalizado.id} fue 'NoReparado'. Marcando vehículo Fuera de Servicio.")
+            vehiculo.get_state().marcar_fuera_de_servicio()
+            self._repo.update(vehiculo)
+            return True
+        else:
+            # Esto no debería ocurrir si el MantenimientoService retorna solo estados finales
+            print(
+                f"Error: El Mantenimiento {mantenimiento_finalizado.id} está en un estado inesperado: {estado_mantenimiento_nombre}.")
+            return False
+
     def get_all_vehiculos(self) -> List[Vehiculo]:
         return self._repo.list_all()
