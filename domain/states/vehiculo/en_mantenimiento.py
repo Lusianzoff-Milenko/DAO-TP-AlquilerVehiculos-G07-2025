@@ -1,4 +1,6 @@
 from domain.models.contrato import Contrato
+from domain.states.vehiculo.disponible import Disponible
+from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 from domain.states.vehiculo.state import State
 
 
@@ -20,10 +22,12 @@ class EnMantenimiento(State):
         print("El vehículo ya está en mantenimiento.")
 
     def reincorporar(self, razon: str) -> None:
-        pass
+        print(f"Vehículo reincorporado: {razon}")
+        self.context.transition_to(Disponible())  # Transición a Disponible
 
     def marcar_fuera_de_servicio(self) -> None:
-        pass
+        print("Vehículo marcado como fuera de servicio por falla de mantenimiento.")
+        self.context.transition_to(FueraDeServicio())
 
     def marcar_no_devolucion(self) -> None:
-        pass
+        print("El vehículo está en mantenimiento y no puede ser marcado como no devolución.")
