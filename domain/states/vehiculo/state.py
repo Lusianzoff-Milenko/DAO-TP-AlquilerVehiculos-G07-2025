@@ -12,52 +12,30 @@ class State(ABC):
     _context: Optional['Vehiculo'] = None
 
     def create_state(self, estado_id: int) -> 'State':
-        def create_state(estado_input: Union[Estado, int]) -> 'State':
-            # 1. Importaciones locales para evitar dependencia circular
-            from domain.states.vehiculo.disponible import Disponible
-            from domain.states.vehiculo.reservado import Reservado
-            from domain.states.vehiculo.alquilado import Alquilado
-            from domain.states.vehiculo.entregado import Entregado
-            from domain.states.vehiculo.en_revision import EnRevision
-            from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
-            from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
+        from domain.states.vehiculo.disponible import Disponible
+        from domain.states.vehiculo.reservado import Reservado
+        from domain.states.vehiculo.alquilado import Alquilado
+        from domain.states.vehiculo.entregado import Entregado
+        from domain.states.vehiculo.en_revision import EnRevision
+        from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
+        from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 
-            # 2. Mapa por ID (Esto evita consultar la BD y evita el bloqueo)
-            # Asegúrate de que estos IDs coincidan con tu base de datos
-            STATE_ID_MAP = {
-                1: Disponible,
-                2: Reservado,
-                3: Alquilado,
-                4: Entregado,
-                5: EnRevision,
-                6: EnMantenimiento,
-                7: FueraDeServicio
-            }
-
-            # 3. Mapa por Nombre (si te llega el objeto Estado)
-            STATE_NAME_MAP = {
-                'Disponible': Disponible,
-                'Reservado': Reservado,
-                'Alquilado': Alquilado,
-                'Entregado': Entregado,
-                'EnRevision': EnRevision,
-                'EnMantenimiento': EnMantenimiento,
-                'FueraDeServicio': FueraDeServicio
-            }
-
-            StateClass = None
-
-            # Lógica de selección
-            if isinstance(estado_input, int):
-                StateClass = STATE_ID_MAP.get(estado_input)
-            elif hasattr(estado_input, 'nombre'):  # Es un objeto Estado
-                StateClass = STATE_NAME_MAP.get(estado_input.nombre)
-
-            if StateClass:
-                return StateClass()
-
-            # Fallback o error
-            raise ValueError(f"Estado no reconocido para input: {estado_input}")
+        if estado_id == 1:
+            return Disponible()
+        elif estado_id == 2:
+            return Reservado()
+        elif estado_id == 3:
+            return Alquilado()
+        elif estado_id == 4:
+            return EnMantenimiento()
+        elif estado_id == 5:
+            return Entregado()
+        elif estado_id == 6:
+            return FueraDeServicio()
+        elif estado_id == 7:
+            return EnRevision()
+        else:
+            raise ValueError(f"Estado de Vehiculo con id {estado_id} no reconocido.")
 
     @property
     def context(self) -> Vehiculo:

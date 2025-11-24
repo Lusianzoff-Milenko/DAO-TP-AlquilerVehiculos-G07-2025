@@ -10,6 +10,8 @@ class Disponible(State):
             # 🚨 IMPORTACIÓN LOCAL
             from domain.states.vehiculo.reservado import Reservado
             self.context.transition_to(Reservado())
+        else:
+            print("La reserva debe hacerse con al menos 3 dias de anticipacion dentro del mismo mes.")
 
     def retirar(self, contrato: Contrato) -> None:
         if contrato.fecha_desde.date() == datetime.now().date() and contrato.fecha_hasta.hour <= datetime.now().hour:
