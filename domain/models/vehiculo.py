@@ -38,7 +38,7 @@ class Vehiculo(Base):
         # 1. Asigna directamente el estado para inicializar el objeto.
         if self.id_estado is None:
             self.id_estado = 1
-        state = State.create_state(self.Estado)
+        state = State.create_state(self._state, int(self.id_estado))
         self._state = state
         if self._state:
             self._state.context = self

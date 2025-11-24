@@ -113,3 +113,21 @@ class MantenimientoRepository:
         except Exception as e:
             print(f"Error deleting mantenimiento: {e}")
             raise
+
+
+    def list_by_vehiculo_id(self, vehiculo_id: int) -> List[Mantenimiento]:
+        try:
+            with self._db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT id, id_vehiculo, costo, descripcion, id_estado, id_empleado, fecha_hora
+                    FROM Mantenimiento WHERE id_vehiculo = ?
+                    ORDER BY fecha_hora DESC
+                    """,
+                    (vehiculo_id,),
+                )
+                rows = cur.fetchall()
+                return [self._row_to_mantenimiento(r) for r in rows]
+        except Exception as e:
+            print(f"Error listing mantenimientos by vehiculo_id: {e}")
+            raise

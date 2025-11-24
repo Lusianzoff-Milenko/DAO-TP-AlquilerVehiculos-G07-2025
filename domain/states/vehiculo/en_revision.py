@@ -1,12 +1,9 @@
 from domain.models.contrato import Contrato
-from domain.states.vehiculo.disponible import Disponible
-from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
-from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 from domain.states.vehiculo.state import State
 
 
 class EnRevision(State):
-
+    # ... (métodos reservar, retirar, entregar, mover_a_revision iguales) ...
     def reservar(self, contrato: Contrato) -> None:
         print("El vehiculo no esta disponible para ser reservado.")
 
@@ -21,14 +18,20 @@ class EnRevision(State):
 
     def iniciar_mantenimiento(self) -> None:
         print("Se detecto un problema durante la revision. El vehiculo sera enviado a mantenimiento.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
         self.context.transition_to(EnMantenimiento())
 
     def reincorporar(self, razon: str) -> None:
         print("El vehiculo ha sido reincorporado al servicio ya que esta en perfecto estado.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.disponible import Disponible
         self.context.transition_to(Disponible())
 
     def marcar_fuera_de_servicio(self) -> None:
         print("Se detecto un problema grave durante la revision. El vehiculo sera marcado como fuera de servicio.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
         self.context.transition_to(FueraDeServicio())
 
     def marcar_no_devolucion(self) -> None:

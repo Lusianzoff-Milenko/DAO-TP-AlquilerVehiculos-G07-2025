@@ -1,6 +1,4 @@
 from domain.models.contrato import Contrato
-from domain.states.vehiculo.entregado import Entregado
-from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
 from domain.states.vehiculo.state import State
 
 
@@ -14,8 +12,11 @@ class Alquilado(State):
 
     def entregar(self) -> None:
         print("El cliente ha devuelto el vehiculo alquilado.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.entregado import Entregado
         self.context.transition_to(Entregado())
 
+    # ... (métodos mover_a_revision, iniciar_mantenimiento, reincorporar, marcar_fuera_de_servicio iguales) ...
     def mover_a_revision(self) -> None:
         print("Un vehiculo alquilado no puede ser movido a revision directamente.")
 
@@ -30,4 +31,6 @@ class Alquilado(State):
 
     def marcar_no_devolucion(self) -> None:
         print("El vehiculo no fue devuelto por el cliente.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
         self.context.transition_to(FueraDeServicio())

@@ -148,12 +148,6 @@ class VehiculoService:
                                               costo_estimado: float,
                                               descripcion_problema: str,
                                               id_empleado_inicia: int) -> Optional[int]:
-        """
-        Mueve un vehículo de 'EnRevision' a 'EnMantenimiento' y crea el registro de Mantenimiento
-        en el estado 'en diagnostico'.
-
-        Retorna el ID del registro de Mantenimiento creado o None si falla.
-        """
         vehiculo = self._repo.get_by_id(vehiculo_id)
         if vehiculo is None:
             print(f"Error: Vehículo con ID {vehiculo_id} no encontrado.")
@@ -253,7 +247,7 @@ class VehiculoService:
             self._repo.update(vehiculo)
             return True
 
-        elif estado_mantenimiento_nombre == 'no reparado':
+        elif estado_mantenimiento_nombre == 'noreparado':
             # Transición 2: Mantenimiento fallido -> Vehículo Fuera de Servicio (Desechado)
             print(f"Mantenimiento {mantenimiento_finalizado.id} fue 'NoReparado'. Marcando vehículo Fuera de Servicio.")
             vehiculo.get_state().marcar_fuera_de_servicio()

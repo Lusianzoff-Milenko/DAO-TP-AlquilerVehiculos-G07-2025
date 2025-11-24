@@ -1,5 +1,4 @@
 from domain.models.contrato import Contrato
-from domain.states.vehiculo.en_revision import EnRevision
 from domain.states.vehiculo.state import State
 
 
@@ -15,8 +14,11 @@ class Entregado(State):
 
     def mover_a_revision(self) -> None:
         print("El vehiculo fue entrago y requiere revision de rutina.")
+        # 🚨 IMPORTACIÓN LOCAL
+        from domain.states.vehiculo.en_revision import EnRevision
         self.context.transition_to(EnRevision())
 
+    # ... (resto de métodos iguales) ...
     def iniciar_mantenimiento(self) -> None:
         print("El vehiculo requiere ser revisado antes de iniciar mantenimiento.")
 

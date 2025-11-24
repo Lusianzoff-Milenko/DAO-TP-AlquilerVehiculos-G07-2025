@@ -218,21 +218,6 @@ class Container(containers.DeclarativeContainer):
         mapper=fotoxmodelo_validation_mapper
     )
 
-
-    vehiculo_service = providers.Factory(
-        VehiculoService,
-        vehiculo_repo=vehiculo_repo,
-        contrato_service=contrato_service,
-        mapper=vehiculo_validation_mapper  # <-- Este usa el mapper de vehículo
-    )
-
-    mantenimiento_service = providers.Factory(
-        MantenimientoService,
-        mantenimiento_repo=mantenimiento_repo,
-        vehiculo_service=vehiculo_service,  # Inyección del servicio de vehículo
-        mapper=mantenimiento_validation_mapper
-    )
-
     detalle_contrato_service = providers.Factory(
         DetalleContratoService,
         detalle_repo=detalle_contrato_repo,
@@ -240,3 +225,21 @@ class Container(containers.DeclarativeContainer):
         vehiculo_repo=vehiculo_repo,  # <-- NECESARIO
         mapper=detalle_contrato_validation_mapper  # <-- NECESARIO (Asegúrate de que esté definido)
     )
+
+    mantenimiento_service = providers.Factory(
+        MantenimientoService,
+        mantenimiento_repo=mantenimiento_repo,
+        mapper=mantenimiento_validation_mapper,
+        estado_service= estado_service
+    )
+
+    vehiculo_service = providers.Factory(
+        VehiculoService,
+        vehiculo_repo=vehiculo_repo,
+        contrato_service=contrato_service,
+        mapper=vehiculo_validation_mapper,
+        detalle_contrato_service=detalle_contrato_service,
+        estado_service= estado_service,
+        mantenimiento_service= mantenimiento_service# <-- Este usa el mapper de vehículo
+    )
+

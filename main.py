@@ -1,24 +1,16 @@
-from datetime import datetime
-import datetime
+from services.containers.container import Container
 
-from data_access.repositories.persona_repository import PersonaRepository
-from domain.models.persona import Persona
-
-from ui.app import run_app
 
 
 def main():
-    persona_repository = PersonaRepository()
-    persona = Persona(
-        nombre="",
-        apellido="Perez",
-        telefono="123456789",
-        mail="xd@mail",
-        direccion="Calle Falsa 123",
-        fecha_nacimiento = datetime.datetime.now())
-    persona_repository.create(persona)
+    container: Container = Container()
+    vehiculo_service = container.vehiculo_service()
+
+    vehiculo = vehiculo_service.get_vehiculo_by_id(1)
+    print(vehiculo)
+    print(vehiculo.get_state() + "soy el estado actual")
 
 if __name__ == "__main__":
 
-    run_app()
+    main()
 

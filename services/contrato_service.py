@@ -32,13 +32,8 @@ class ContratoService:
                                                'id_metodo_de_pago'): return None
         if not self._mapper.validate_fk_exists('empleado', contrato.id_empleado, 'id_empleado'): return None
         if not self._mapper.validate_fk_exists('estado', contrato.id_estado, 'id_estado'): return None
-
         # ... (Lógica de Negocio: disponibilidad de vehículo) ...
-
         contrato_id = self._repo.create(contrato)
-
-        print("soy el id del contrato creado:", contrato_id)
-
         if not contrato_id:
             print("Error: Falló la creación del contrato principal.")
             return None
@@ -154,26 +149,11 @@ class ContratoService:
     def has_active_contracts(self, entity_type: str, entity_id: int) -> bool:
         return len(self.get_active_contracts_by_entity(entity_type, entity_id)) > 0
 
-    def confirmar_pago_reserva(self, contrato_id: int, monto: float, 
+    def confirmar_pago_reserva(self, contrato: Contrato, monto: float,
                                vehiculo_service: 'VehiculoService',
                                detalle_service: DetalleContratoService) -> bool:
-        """
-        Confirma el pago de una reserva y transiciona el contrato a EnCurso.
-        También actualiza los vehículos asociados de Reservado a Alquilado.
-        
-        Args:
-            contrato_id: ID del contrato a confirmar
-            monto: Monto del pago recibido
-            vehiculo_service: Servicio de vehículos (inyección tardía)
-            detalle_service: Servicio de detalles de contrato
-            
-        Returns:
-            True si la operación fue exitosa, False en caso contrario
-        """
-        # 1. Cargar el contrato
-        contrato = self._repo.get_by_id(contrato_id)
         if contrato is None:
-            print(f"Error: Contrato con ID {contrato_id} no encontrado.")
+            print(f"Error: Contrato no encontrado o inexistente.")
             return False
         
         # 2. Inyectar estados disponibles
@@ -191,13 +171,9 @@ class ContratoService:
             return False
         
         # 5. Obtener vehículos del contrato
-        detalles = detalle_service.list_detalles_by_contrato(contrato_id)
-        vehiculos_ids = [d.id_vehiculo for d in detalles]
-        
-        # 6. Transicionar vehículos de Reservado a Alquilado
-        from domain.states.vehiculo.alquilado import Alquilado
-        for vehiculo_id in vehiculos_ids:
-            vehiculo = vehiculo_service.get_vehiculo_by_id(vehiculo_id)
+        detalles = contrato.detalles_contrato
+        vehiculos = [d.Vehiculo for d in detalles]
+        for vehiculo in vehiculos:
             if vehiculo:
                 vehiculo.estados_disponibles = vehiculo_service._estados_vehiculo
                 estado_vehiculo = vehiculo.get_state().__class__.__name__
@@ -206,38 +182,22 @@ class ContratoService:
                     # Transición: Reservado → Alquilado
                     vehiculo.get_state().retirar(contrato)
                     vehiculo_service.update_vehiculo(vehiculo)
-                    print(f"Vehículo {vehiculo_id} transicionado a Alquilado.")
+                    print(f"Vehículo {vehiculo.id} transicionado a Alquilado.")
                 else:
-                    print(f"Advertencia: Vehículo {vehiculo_id} está en {estado_vehiculo}, no en Reservado.")
+                    print(f"Advertencia: Vehículo {vehiculo.id} está en {estado_vehiculo}, no en Reservado.")
         
         # 7. Persistir el contrato
         if self._repo.update(contrato):
-            print(f"Contrato {contrato_id} confirmado y pasado a EnCurso.")
+            print(f"Contrato {contrato.id} confirmado y pasado a EnCurso.")
             return True
         else:
-            print(f"Error al persistir el contrato {contrato_id}.")
+            print(f"Error al persistir el contrato {contrato.id}.")
             return False
 
-    def cancelar_contrato(self, contrato_id: int, razon: str,
-                         vehiculo_service: 'VehiculoService',
-                         detalle_service: DetalleContratoService) -> bool:
-        """
-        Cancela un contrato en estado EnReservado.
-        Los vehículos asociados vuelven a Disponible.
-        
-        Args:
-            contrato_id: ID del contrato a cancelar
-            razon: Razón de la cancelación
-            vehiculo_service: Servicio de vehículos (inyección tardía)
-            detalle_service: Servicio de detalles de contrato
-            
-        Returns:
-            True si la cancelación fue exitosa, False en caso contrario
-        """
-        # 1. Cargar el contrato
-        contrato = self._repo.get_by_id(contrato_id)
+    def cancelar_contrato(self, contrato: Contrato, razon: str,
+                         vehiculo_service: 'VehiculoService') -> bool:
         if contrato is None:
-            print(f"Error: Contrato con ID {contrato_id} no encontrado.")
+            print(f"Error: Contrato no encontrado o inexistente.")
             return False
         
         # 2. Inyectar estados disponibles
@@ -255,54 +215,36 @@ class ContratoService:
             return False
         
         # 5. Obtener vehículos del contrato
-        detalles = detalle_service.list_detalles_by_contrato(contrato_id)
-        vehiculos_ids = [d.id_vehiculo for d in detalles]
-        
-        # 6. Transicionar vehículos de Reservado a Disponible
-        from domain.states.vehiculo.disponible import Disponible
-        for vehiculo_id in vehiculos_ids:
-            vehiculo = vehiculo_service.get_vehiculo_by_id(vehiculo_id)
+        detalles = contrato.detalles_contrato
+        vehiculos = [d.Vehiculo for d in detalles]
+        for vehiculo in vehiculos:
             if vehiculo:
                 vehiculo.estados_disponibles = vehiculo_service._estados_vehiculo
                 estado_vehiculo = vehiculo.get_state().__class__.__name__
                 
                 if estado_vehiculo == 'Reservado':
                     # Transición: Reservado → Disponible
-                    vehiculo.get_state().reincorporar(razon=f"Contrato {contrato_id} cancelado: {razon}")
+                    vehiculo.get_state().reincorporar(razon=f"Contrato {contrato.id} cancelado: {razon}")
                     vehiculo_service.update_vehiculo(vehiculo)
-                    print(f"Vehículo {vehiculo_id} devuelto a Disponible.")
+                    print(f"Vehículo {vehiculo.id} devuelto a Disponible.")
                 else:
-                    print(f"Advertencia: Vehículo {vehiculo_id} está en {estado_vehiculo}, no en Reservado.")
+                    print(f"Advertencia: Vehículo {vehiculo.id} está en {estado_vehiculo}, no en Reservado.")
         
         # 7. Persistir el contrato
         if self._repo.update(contrato):
-            print(f"Contrato {contrato_id} cancelado exitosamente.")
+            print(f"Contrato {contrato.id} cancelado exitosamente.")
             return True
         else:
-            print(f"Error al persistir el contrato {contrato_id}.")
+            print(f"Error al persistir el contrato {contrato.id}.")
             return False
 
-    def recibir_devolucion(self, contrato_id: int, fecha_devolucion: datetime,
+    def recibir_devolucion(self, contrato: Contrato, fecha_devolucion: datetime,
                           vehiculo_service: 'VehiculoService',
                           detalle_service: DetalleContratoService) -> tuple[bool, float]:
-        """
-        Registra la devolución de vehículos y finaliza el contrato.
-        Calcula recargo si hay retraso (10% por día).
-        Los vehículos pasan a estado Entregado.
-        
-        Args:
-            contrato_id: ID del contrato
-            fecha_devolucion: Fecha real de devolución
-            vehiculo_service: Servicio de vehículos (inyección tardía)
-            detalle_service: Servicio de detalles de contrato
-            
-        Returns:
-            (éxito, recargo_calculado) donde recargo es el monto adicional a cobrar
-        """
         # 1. Cargar el contrato
-        contrato = self._repo.get_by_id(contrato_id)
+        contrato = self._repo.get_by_id(contrato.id)
         if contrato is None:
-            print(f"Error: Contrato con ID {contrato_id} no encontrado.")
+            print(f"Error: Contrato con ID {contrato.id} no encontrado.")
             return (False, 0.0)
         
         # 2. Inyectar estados disponibles
@@ -323,7 +265,7 @@ class ContratoService:
         recargo = 0.0
         if dias_retraso > 0:
             # Obtener el monto total del contrato sumando detalles
-            detalles = detalle_service.list_detalles_by_contrato(contrato_id)
+            detalles = detalle_service.list_detalles_by_contrato(contrato.id)
             total_contrato = sum(d.monto for d in detalles)
             
             # Recargo: 10% por día
@@ -331,47 +273,31 @@ class ContratoService:
             print(f"Recargo por {int(dias_retraso)} día(s) de retraso: ${recargo:.2f}")
         
         # 6. Obtener vehículos del contrato
-        detalles = detalle_service.list_detalles_by_contrato(contrato_id)
-        vehiculos_ids = [d.id_vehiculo for d in detalles]
+        detalles = detalle_service.list_detalles_by_contrato(contrato.id)
+        vehiculos = [d.Vehiculo for d in detalles]
         
         # 7. Transicionar vehículos de Alquilado a Entregado
-        from domain.states.vehiculo.entregado import Entregado
-        for vehiculo_id in vehiculos_ids:
-            vehiculo = vehiculo_service.get_vehiculo_by_id(vehiculo_id)
+        for vehiculo in vehiculos:
             if vehiculo:
-                vehiculo.estados_disponibles = vehiculo_service._estados_vehiculo
-                estado_vehiculo = vehiculo.get_state().__class__.__name__
-                
-                if estado_vehiculo == 'Alquilado':
+                if vehiculo.get_state().__class__.__name__ == 'Alquilado':
                     # Transición: Alquilado → Entregado
                     vehiculo.get_state().entregar()
                     vehiculo_service.update_vehiculo(vehiculo)
-                    print(f"Vehículo {vehiculo_id} marcado como Entregado.")
+                    print(f"Vehículo {vehiculo.id} marcado como Entregado.")
                 else:
-                    print(f"Advertencia: Vehículo {vehiculo_id} está en {estado_vehiculo}, no en Alquilado.")
+                    print(f"Advertencia: Vehículo {vehiculo.id} está en {vehiculo.get_state().__class__.__name__}, no en Alquilado.")
         
         # 8. Persistir el contrato
         if self._repo.update(contrato):
-            print(f"Contrato {contrato_id} finalizado y marcado como YaEntregado.")
+            print(f"Contrato {contrato.id} finalizado y marcado como YaEntregado.")
             return (True, recargo)
         else:
-            print(f"Error al persistir el contrato {contrato_id}.")
+            print(f"Error al persistir el contrato {contrato.id}.")
             return (False, 0.0)
 
-    def puede_modificar_fechas_contrato(self, contrato_id: int) -> bool:
-        """
-        Verifica si un contrato permite modificar sus fechas.
-        Solo permitido si NO está EnCurso.
-        
-        Args:
-            contrato_id: ID del contrato a verificar
-            
-        Returns:
-            True si se pueden modificar fechas, False en caso contrario
-        """
-        contrato = self._repo.get_by_id(contrato_id)
+    def puede_modificar_fechas_contrato(self, contrato: Contrato) -> bool:
         if contrato is None:
-            print(f"Error: Contrato con ID {contrato_id} no encontrado.")
+            print(f"Error: Contrato no encontrado o inexistente.")
             return False
         
         # Inyectar estados disponibles
@@ -381,6 +307,6 @@ class ContratoService:
         puede_modificar = contrato.get_state().puede_modificar_fechas()
         
         if not puede_modificar:
-            print(f"No se pueden modificar fechas del contrato {contrato_id} en estado {contrato.get_state().__class__.__name__}.")
+            print(f"No se pueden modificar fechas del contrato {contrato.id} en estado {contrato.get_state().__class__.__name__}.")
         
         return puede_modificar
