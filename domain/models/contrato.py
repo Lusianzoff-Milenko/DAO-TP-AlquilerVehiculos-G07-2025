@@ -5,7 +5,6 @@ from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from .base import Base
 from ..states.contrato.state import State
-from .estado import Estado
 
 if TYPE_CHECKING:
     from .detalle_contrato import DetalleContrato
@@ -36,21 +35,46 @@ class Contrato(Base):
     estados_disponibles: List[type[Estado]] = []
 
     def __init__(self, **kw: Any) -> None:
-        """
-        Inicializa el contrato y establece su estado inicial.
-        Si no se especifica id_estado, se inicializa como EnReservado (id=9).
-        """
         super().__init__(**kw)
 
-        # Estado por defecto: EnReservado (9)
+        # 1. Estado por defecto (EnReservado, ID 9)
         if self.id_estado is None:
             self.id_estado = 9
 
-        # Crear instancia del estado usando Factory Method
-        state = State.create_state(self.id_estado)
-        self._state = state
+        # 2. Inicializar State
+        from domain.states.contrato.state import State as ContratoState
+
+        # Si SQLAlchemy ya cargó la relación Estado, usamos la factoría dinámica
+        if self.Estado:
+            self._state = ContratoState.from_entity(self.Estado)
+        else:
+            # Si es objeto nuevo o lazy loading no activo, usamos default
+            from domain.states.contrato.en_reservado import EnReservado
+            self._state = EnReservado()
+
         if self._state:
             self._state.context = self
+
+    def transition_to(self, state: State):
+        """
+        Cambia el estado y actualiza el modelo para persistencia.
+        """
+        if self._state.__class__ != state.__class__:
+            print(f"Contrato {self.id}: Transicionando a {type(state).__name__}")
+            self._state = state
+            self._state.context = self
+
+            nuevo_nombre = type(state).__name__
+
+            # Actualizar FK y Relación buscando en la lista inyectada
+            if self.estados_disponibles:
+                for estado_bd in self.estados_disponibles:
+                    if estado_bd.nombre.lower() == nuevo_nombre.lower():
+                        self.id_estado = estado_bd.id
+                        self.Estado = estado_bd
+                        return
+
+                print(f"¡ADVERTENCIA! No se encontró ID para estado '{nuevo_nombre}' en Contrato.")
 
     def get_state(self) -> State:
         """Obtiene el estado actual del contrato."""
@@ -68,28 +92,6 @@ class Contrato(Base):
         """Agrega un detalle al contrato."""
         self.detalles_contrato.append(detalle)
         detalle.id_contrato = self.id
-
-    def transition_to(self, state: State):
-        """
-        Realiza la transición a un nuevo estado.
-        Actualiza tanto el objeto State en memoria como el id_estado en BD.
-        """
-        if self._state.__class__ != state.__class__:
-            print(f"Contrato: Transicionando al estado {type(state).__name__}")
-            self._state = state
-            self._state.context = self
-            
-            # Buscar el ID correspondiente en estados_disponibles
-            nuevo_estado_nombre = type(state).__name__
-            encontrado = False
-            for estado in self.estados_disponibles:
-                if estado.nombre == nuevo_estado_nombre:
-                    self.id_estado = estado.id
-                    encontrado = True
-                    break
-            
-            if not encontrado:
-                print(f"¡ADVERTENCIA! ID de estado NO encontrado en la lista inyectada para: '{nuevo_estado_nombre}'.")
 
     def __str__(self) -> str:
         estado_nombre = self._state.__class__.__name__ if self._state else "Sin estado"

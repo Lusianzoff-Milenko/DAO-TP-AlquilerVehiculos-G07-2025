@@ -30,29 +30,39 @@ class Mantenimiento(Base):
 
     def __init__(self, **kw: Any) -> None:
         super().__init__(**kw)
-        # 1. Asigna directamente el estado para inicializar el objeto.
+
+        # 1. Estado por defecto (EnDiagnostico, ID 12 según populate)
         if self.id_estado is None:
-            self.id_estado = 1
-        state = State.create_state(self.Estado)
-        self._state = state
+            self.id_estado = 12
+
+        # 2. Inicializar State
+        from domain.states.mantenimiento.state import State as MantenimientoState
+
+        if self.Estado:
+            self._state = MantenimientoState.from_entity(self.Estado)
+        else:
+            from domain.states.mantenimiento.en_diagnostico import EnDiagnostico
+            self._state = EnDiagnostico()
+
         if self._state:
             self._state.context = self
-        # La lógica de transición no se ejecuta, por lo que no hay UPDATE de DB.
 
     def transition_to(self, state: State):
         if self._state.__class__ != state.__class__:
-            print(f"Vehiculo: Transicionando al estado {type(state).__name__}")
+            print(f"Mantenimiento {self.id}: Transicionando a {type(state).__name__}")
             self._state = state
             self._state.context = self
-            nuevo_estado_nombre = type(state).__name__
-            encontrado = False
-            for estado in self.estados_disponibles:
-                if estado.nombre == nuevo_estado_nombre:
-                    self.id_estado = estado.id
-                    encontrado = True
-                    break
-            if not encontrado:
-                print(f"¡ADVERTENCIA! ID de estado NO encontrado en la lista inyectada para: '{nuevo_estado_nombre}'.")
+
+            nuevo_nombre = type(state).__name__
+
+            if self.estados_disponibles:
+                for estado_bd in self.estados_disponibles:
+                    if estado_bd.nombre.lower() == nuevo_nombre.lower():
+                        self.id_estado = estado_bd.id
+                        self.Estado = estado_bd
+                        return
+
+                print(f"¡ADVERTENCIA! No se encontró ID para estado '{nuevo_nombre}' en Mantenimiento.")
 
     def get_last_maintenance(self):
         if self.fecha_hora.month >= datetime.now().month - 6:

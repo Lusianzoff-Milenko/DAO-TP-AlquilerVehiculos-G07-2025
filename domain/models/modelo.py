@@ -14,5 +14,5 @@ class Modelo(Base):
     cantidad_pasajeros: int = Column(Integer, nullable=False)
     cantidad_puertas: int = Column(Integer, nullable=False)
     motor: str = Column(String(50), nullable=False)
-    anio_lanzamiento: datetime = Column(DateTime, nullable=False, name="año_lanzamiento")
+    anio_lanzamiento: int = Column(Integer, nullable=False, name="año_lanzamiento")
     Marca = relationship(Marca)

@@ -1,24 +1,45 @@
-from datetime import timedelta, datetime
+from datetime import datetime
+from typing import List
 
+from domain.models.contrato import Contrato
+from domain.models.detalle_contrato import DetalleContrato
 from services.containers.container import Container
 
 
 
 def main():
     container: Container = Container()
-    vehiculo_service = container.vehiculo_service()
     contrato_service = container.contrato_service()
-    cliente = container.cliente_service().get_cliente_by_id(1)
-    empleado = container.empleado_service().get_empleado_by_id(1)
-    metodo_pago = container.metodo_pago_service().get_metodo_pago_by_id(1)
-    contrato = contrato_service.get_contrato_by_id(1)
-    vehiculo = vehiculo_service.get_vehiculo_by_id(1)
-    print(contrato)
-    print(vehiculo)
-    contrato_service.tomar_reserva(vehiculo, cliente, empleado, metodo_pago, True, datetime.now() + timedelta(days=15), datetime.now() + timedelta(days=50))
-    print(f"{vehiculo.get_state().__class__.__name__} soy el estado actual")
+    vehiculo_service = container.vehiculo_service()
+    contrato = Contrato(
+                id_cliente=1,
+                fecha_desde=datetime(2026, 1, 1),
+                fecha_hasta=datetime(2026, 2, 10),
+                id_metodo_de_pago=1,
+                id_empleado=1,
+                tiene_seguro=True
+            )
+    detalles_ejemplo: List[DetalleContrato] = [
+        DetalleContrato(
+            # id_contrato= El servicio lo asignará (debe ser None al inicio)
+            id_vehiculo=1,  # Alquila el Vehículo con ID 1
+            monto=5000.0,
+            fecha_retiro=datetime(2026, 1, 1),
+            fecha_entrega=datetime(2026, 2, 10),
+        ),
+        DetalleContrato(
+            # id_contrato= El servicio lo asignará
+            id_vehiculo=2,  # Alquila el Vehículo con ID 2
+            monto=7500.0,
+            fecha_retiro=datetime(2026, 1, 1),
+            fecha_entrega=datetime(2026, 2, 10),
+        )
+    ]
+    contrato_service.crear_contrato_reserva(contrato, detalles_ejemplo)
+    print("Contrato de reserva creado con éxito.")
+    print(vehiculo_service.get_vehiculo_by_id(1))
+
 
 if __name__ == "__main__":
-
     main()
 

@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
 
+from domain.exceptions import DomainError
 from domain.models.contrato import Contrato
 from domain.models.detalle_contrato import DetalleContrato
 from domain.states.contrato.state import State as ContratoState
@@ -76,11 +77,18 @@ class ContratoService:
                 vehiculo.id_estado = est_v_reservado.id
                 session.add(vehiculo)  # Update
 
-            session.commit()
-            return contrato.id
+                vehiculo.get_state().reservar(contrato)
 
+                session.commit()
+                return contrato.id
+
+        except DomainError as e:
+            # Aquí capturas el mensaje "La reserva debe hacerse con al menos 3 días..."
+            print(f"Validación de Negocio falló: {str(e)}")
+            session.rollback()
+            return None
         except Exception as e:
-            print(f"Fallo al crear reserva: {e}")
+            print(f"Error crítico: {str(e)}")
             session.rollback()
             return None
 

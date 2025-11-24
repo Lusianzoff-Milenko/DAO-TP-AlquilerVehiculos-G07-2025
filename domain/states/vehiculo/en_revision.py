@@ -1,38 +1,35 @@
 from domain.models.contrato import Contrato
 from domain.states.vehiculo.state import State
-
+from domain.exceptions import StateTransitionError
 
 class EnRevision(State):
-    # ... (métodos reservar, retirar, entregar, mover_a_revision iguales) ...
+
     def reservar(self, contrato: Contrato) -> None:
-        print("El vehiculo no esta disponible para ser reservado.")
+        raise StateTransitionError("Vehículo en revisión, no disponible para reservas.")
 
     def retirar(self, contrato: Contrato) -> None:
-        print("El vehiculo no esta disponible para ser retirado.")
+        raise StateTransitionError("Vehículo en revisión, no puede ser retirado.")
 
     def entregar(self) -> None:
-        print("El vehiculo no puede ser entregado ya que esta " + self.__class__.__name__)
+        raise StateTransitionError(f"El vehículo ya está en {self.__class__.__name__}.")
 
     def mover_a_revision(self) -> None:
-        print("El vehiculo ya esta " + self.__class__.__name__)
+        print("LOG: El vehículo ya se encuentra en revisión.")
 
     def iniciar_mantenimiento(self) -> None:
-        print("Se detecto un problema durante la revision. El vehiculo sera enviado a mantenimiento.")
-        # 🚨 IMPORTACIÓN LOCAL
         from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
+        print("LOG: Falla detectada en revisión. Enviando a taller.")
         self.context.transition_to(EnMantenimiento())
 
     def reincorporar(self, razon: str) -> None:
-        print("El vehiculo ha sido reincorporado al servicio ya que esta en perfecto estado.")
-        # 🚨 IMPORTACIÓN LOCAL
         from domain.states.vehiculo.disponible import Disponible
+        print(f"LOG: Revisión OK. Vehículo reincorporado. Razón: {razon}")
         self.context.transition_to(Disponible())
 
     def marcar_fuera_de_servicio(self) -> None:
-        print("Se detecto un problema grave durante la revision. El vehiculo sera marcado como fuera de servicio.")
-        # 🚨 IMPORTACIÓN LOCAL
         from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
+        print("LOG: Falla grave en revisión. Vehículo fuera de servicio.")
         self.context.transition_to(FueraDeServicio())
 
     def marcar_no_devolucion(self) -> None:
-        print("Un vehiculo en revision no puede ser marcado como no devolucion.")
+        raise StateTransitionError("El vehículo está en taller, no aplica 'no devolución'.")
