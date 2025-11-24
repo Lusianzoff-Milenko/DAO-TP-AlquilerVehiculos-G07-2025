@@ -61,3 +61,21 @@ def validate_boolean(value: Any, name: str) -> Optional[str]:
     if not isinstance(value, bool):
         return f"Invalid '{name}' — must be a boolean."
     return None
+
+def validate_fecha_rango(fecha_desde: Optional[datetime.datetime], 
+                         fecha_hasta: Optional[datetime.datetime]) -> Optional[str]:
+    """
+    Valida que fecha_hasta sea posterior a fecha_desde.
+    Retorna un mensaje de error si la validación falla, None si es válido.
+    """
+    if fecha_desde is None:
+        return "Invalid 'fecha_desde' — must not be None."
+    if fecha_hasta is None:
+        return "Invalid 'fecha_hasta' — must not be None."
+    if not isinstance(fecha_desde, datetime.datetime):
+        return "Invalid 'fecha_desde' — must be a datetime object."
+    if not isinstance(fecha_hasta, datetime.datetime):
+        return "Invalid 'fecha_hasta' — must be a datetime object."
+    if fecha_hasta <= fecha_desde:
+        return "Invalid date range — 'fecha_hasta' must be after 'fecha_desde'."
+    return None

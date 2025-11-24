@@ -1,7 +1,7 @@
 from typing import Optional, List
 from data_access.database_connector import Database
 from domain.models.contrato import Contrato
-from services.utils import datetime_to_iso, iso_to_datetime, validate_positive_int, validate_boolean
+from services.utils import datetime_to_iso, iso_to_datetime, validate_positive_int, validate_boolean, validate_fecha_rango
 
 
 class ContratoRepository:
@@ -18,6 +18,8 @@ class ContratoRepository:
         error = validate_positive_int(contrato.id_estado, 'id_estado')
         if error: return error
         error = validate_boolean(contrato.tiene_seguro, 'tiene_seguro')
+        if error: return error
+        error = validate_fecha_rango(contrato.fecha_desde, contrato.fecha_hasta)
         if error: return error
         return None
 
