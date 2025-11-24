@@ -1,56 +1,72 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
-from domain.models.contrato import Contrato
 
 if TYPE_CHECKING:
     from domain.models.vehiculo import Vehiculo
+    from domain.models.contrato import Contrato
+    from domain.models.estado import Estado  # Importamos el modelo Estado
+
 
 class State(ABC):
-
     _context: Optional['Vehiculo'] = None
 
-    def create_state(self, estado_id: int) -> 'State':
-        from domain.states.vehiculo.disponible import Disponible
-        from domain.states.vehiculo.reservado import Reservado
-        from domain.states.vehiculo.alquilado import Alquilado
-        from domain.states.vehiculo.entregado import Entregado
-        from domain.states.vehiculo.en_revision import EnRevision
-        from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
-        from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
-
-        if estado_id == 1:
-            return Disponible()
-        elif estado_id == 2:
-            return Reservado()
-        elif estado_id == 3:
-            return Alquilado()
-        elif estado_id == 4:
-            return EnMantenimiento()
-        elif estado_id == 5:
-            return Entregado()
-        elif estado_id == 6:
-            return FueraDeServicio()
-        elif estado_id == 7:
-            return EnRevision()
-        else:
-            raise ValueError(f"Estado de Vehiculo con id {estado_id} no reconocido.")
-
     @property
-    def context(self) -> Vehiculo:
+    def context(self) -> 'Vehiculo':
         return self._context
 
     @context.setter
-    def context(self, context: Vehiculo) -> None:
+    def context(self, context: 'Vehiculo') -> None:
         self._context = context
 
+    @staticmethod
+    def from_entity(estado_entity: 'Estado') -> 'State':
+        """
+        Factory Method dinámico.
+        Recibe la entidad Estado de la BD y decide qué clase instanciar por su NOMBRE.
+        """
+        if not estado_entity:
+            # Fallback por defecto si es None
+            from domain.states.vehiculo.disponible import Disponible
+            return Disponible()
 
+        # Importaciones locales para evitar ciclos
+        from domain.states.vehiculo.disponible import Disponible
+        from domain.states.vehiculo.reservado import Reservado
+        from domain.states.vehiculo.alquilado import Alquilado
+        from domain.states.vehiculo.en_mantenimiento import EnMantenimiento
+        from domain.states.vehiculo.entregado import Entregado
+        from domain.states.vehiculo.fuera_de_servicio import FueraDeServicio
+        from domain.states.vehiculo.en_revision import EnRevision
+
+        # Mapeo usando el NOMBRE exacto que tienes en la BD (tabla Estado)
+        # Asegúrate que los keys coincidan con Estado.nombre
+        mapping = {
+            "Disponible": Disponible,
+            "Reservado": Reservado,
+            "Alquilado": Alquilado,
+            "EnMantenimiento": EnMantenimiento,
+            "Entregado": Entregado,
+            "FueraDeServicio": FueraDeServicio,
+            "EnRevision": EnRevision
+        }
+
+        # Buscamos por nombre. Si no existe, lanzamos error o devolvemos default.
+        state_class = mapping.get(estado_entity.nombre)
+
+        if not state_class:
+            print(f"Advertencia: Estado '{estado_entity.nombre}' no tiene clase asociada. Usando Disponible.")
+            return Disponible()
+
+        return state_class()
+
+    # ... (Métodos abstractos igual que antes) ...
     @abstractmethod
-    def reservar(self, contrato: Contrato) -> None:
+    def reservar(self, contrato: 'Contrato') -> None:
         pass
 
     @abstractmethod
-    def retirar(self, contrato: Contrato) -> None:
+    def retirar(self, contrato: 'Contrato') -> None:
         pass
 
     @abstractmethod

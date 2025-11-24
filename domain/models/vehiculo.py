@@ -28,7 +28,7 @@ class Vehiculo(Base):
     Color = relationship(Color)
 
     _state = None
-    estados_disponibles: List[Estado] = []
+    estados_disponibles: list[type[Estado]] = []
 
     def get_state(self) -> State:
         return self._state

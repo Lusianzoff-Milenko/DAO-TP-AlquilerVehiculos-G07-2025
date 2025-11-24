@@ -12,3 +12,6 @@ class EstadoRepository(SQLAlchemyRepository[Estado]):
 
     def get_by_ambito(self, ambito: str) -> list[type[Estado]]:
         return self.session.query(Estado).filter_by(ambito=ambito).all()
+
+    def get_by_nombre_and_ambito(self, name, ambito):
+        return self.session.query(Estado).filter_by(nombre=name, ambito=ambito).first()

@@ -1,4 +1,5 @@
 from typing import Optional, List
+from sqlalchemy.exc import IntegrityError
 from domain.models.tipoDocumento import TipoDocumento
 from data_access.repositories.tipo_documento_repository import TipoDocumentoRepository
 
@@ -7,8 +8,12 @@ class TipoDocumentoService:
         self._repo = tipo_documento_repo
 
     def create_tipo_documento(self, tipo_documento: TipoDocumento) -> Optional[int]:
-        """Crea un nuevo tipo de documento si no existe."""
-        return self._repo.create(tipo_documento)
+        try:
+            nuevo = self._repo.create(tipo_documento)
+            return nuevo.id
+        except IntegrityError:
+            self._repo.session.rollback()
+            return None
 
     def get_tipo_documento_by_id(self, tipo_documento_id: int) -> Optional[TipoDocumento]:
         return self._repo.get_by_id(tipo_documento_id)
@@ -17,12 +22,17 @@ class TipoDocumentoService:
         return self._repo.list_all()
 
     def update_tipo_documento(self, tipo_documento: TipoDocumento) -> bool:
-        """Actualiza un tipo de documento existente."""
-        if not tipo_documento.id:
-            print("ID de tipo de documento requerido para actualizar.")
+        if not tipo_documento.id: return False
+        try:
+            self._repo.update(tipo_documento)
+            return True
+        except IntegrityError:
+            self._repo.session.rollback()
             return False
-        return self._repo.update(tipo_documento)
 
     def delete_tipo_documento(self, tipo_documento_id: int) -> bool:
-        """Elimina un tipo de documento. Se recomienda chequear antes si está en uso por Clientes."""
-        return self._repo.delete(tipo_documento_id)
+        try:
+            return self._repo.delete(tipo_documento_id)
+        except IntegrityError:
+            self._repo.session.rollback()
+            return False

@@ -33,7 +33,7 @@ class Contrato(Base):
 
     # Atributos del State Pattern
     _state: State = None
-    estados_disponibles: List[Estado] = []
+    estados_disponibles: List[type[Estado]] = []
 
     def __init__(self, **kw: Any) -> None:
         """

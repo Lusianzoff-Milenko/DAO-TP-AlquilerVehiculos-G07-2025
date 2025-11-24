@@ -17,6 +17,13 @@ from .inconveniente_repository import InconvenienteRepository
 from .persona_repository import PersonaRepository
 from .foto_x_modelo_repository import FotoXModeloRepository
 from .modelo_x_color_repository import ModeloXColorRepository
+from .view_repositories import (
+    VistaClientesRepository,
+    VistaRentabilidadRepository,
+    VistaDisponibilidadRepository,
+    VistaFacturacionRepository,
+    VistaUtilizacionRepository,
+    VistaVehiculosRepository)
 
 __all__ = [
     "SQLAlchemyRepository",
@@ -38,4 +45,10 @@ __all__ = [
     "PersonaRepository",
     "FotoXModeloRepository",
     "ModeloXColorRepository",
+    "VistaClientesRepository",
+    "VistaRentabilidadRepository",
+    "VistaDisponibilidadRepository",
+    "VistaFacturacionRepository",
+    "VistaUtilizacionRepository",
+    "VistaVehiculosRepository"
 ]

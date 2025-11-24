@@ -1,22 +1,20 @@
 from typing import Optional, List
+from sqlalchemy.exc import IntegrityError
 from domain.models.empleado import Empleado
 from data_access.repositories.empleado_repository import EmpleadoRepository
-from services.validation_mapper import ValidationMapper
-
 
 class EmpleadoService:
-    def __init__(self, empleado_repo: EmpleadoRepository, mapper: ValidationMapper):
+    def __init__(self, empleado_repo: EmpleadoRepository):
         self._repo = empleado_repo
-        self._mapper = mapper
-
 
     def create_empleado(self, empleado: Empleado) -> Optional[int]:
-        if not self._mapper.validate_fk_exists('persona', empleado.id_persona, 'id_persona'):
+        try:
+            nuevo_empleado = self._repo.create(empleado)
+            return nuevo_empleado.id
+        except IntegrityError as e:
+            print(f"Error al crear empleado (integridad): {e}")
+            self._repo.session.rollback()
             return None
-        if not self._mapper.validate_fk_exists('tipo_puesto', empleado.id_tipo_puesto, 'id_tipo_puesto'):
-            return None
-
-        return self._repo.create(empleado)
 
     def get_empleado_by_id(self, empleado_id: int) -> Optional[Empleado]:
         return self._repo.get_by_id(empleado_id)
@@ -26,20 +24,17 @@ class EmpleadoService:
 
     def update_empleado(self, empleado: Empleado) -> bool:
         if not empleado.id: return False
-        if not self._mapper.validate_fk_exists('persona', empleado.id_persona, 'id_persona'):
+        try:
+            self._repo.update(empleado)
+            return True
+        except IntegrityError:
+            self._repo.session.rollback()
             return False
-        if not self._mapper.validate_fk_exists('tipo_puesto', empleado.id_tipo_puesto, 'id_tipo_puesto'):
-            return False
-
-        return self._repo.update(empleado)
 
     def delete_empleado(self, empleado_id: int) -> bool:
-        if self._repo.get_by_id(empleado_id) is None:
-            print(f"Empleado con ID {empleado_id} no encontrado.")
+        try:
+            return self._repo.delete(empleado_id)
+        except IntegrityError:
+            print("No se puede eliminar: El empleado tiene registros asociados.")
+            self._repo.session.rollback()
             return False
-        if self._contrato_service.has_active_contracts("empleado", empleado_id):
-            print(
-                f"Error de Negocio: No se puede eliminar el Empleado ID {empleado_id} porque está asociado a contratos activos.")
-            return False
-
-        return self._repo.delete(empleado_id)

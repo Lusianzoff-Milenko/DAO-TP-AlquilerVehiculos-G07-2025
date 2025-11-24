@@ -14,9 +14,10 @@ from .tipoinconveniente_service import TipoInconvenienteService
 from .tipopuesto_service import TipoPuestoService
 from .vehiculo_service import VehiculoService
 from .marca_service import MarcaService
-from .tipopuesto_service import TipoPuestoService
 from .fotoxmodelo_service import FotoXModeloService
 from .modeloxcolor_service import ModeloXColorService
+from .validation_mapper import ValidationMapper
+
 __all__ = [
     "ClienteService",
     "ColorService",
@@ -34,7 +35,7 @@ __all__ = [
     "TipoPuestoService",
     "VehiculoService",
     "MarcaService",
-    "TipoPuestoService",
     "FotoXModeloService",
     "ModeloXColorService",
+    "ValidationMapper"
 ]

@@ -1,98 +1,136 @@
-from typing import Optional, List
-from sqlalchemy.exc import IntegrityError
+from typing import List, Optional
+from datetime import datetime
 
-from data_access.repositories import ContratoRepository
 from domain.models.contrato import Contrato
 from domain.models.detalle_contrato import DetalleContrato
-from services.detalle_contrato_service import DetalleContratoService
+from domain.states.contrato.state import State as ContratoState
+from data_access.repositories import ContratoRepository
 from services.estado_service import EstadoService
 
 
 class ContratoService:
-    def __init__(
-            self,
-            contrato_repo: ContratoRepository,
-            estado_service: EstadoService
-    ):
+    def __init__(self, contrato_repo: ContratoRepository, estado_service: EstadoService):
         self._repo = contrato_repo
         self._estado_service = estado_service
-        self._estados_contrato = self._estado_service.get_estado_by_ambito('Contrato')
 
-    def create_contrato(self, contrato: Contrato) -> Optional[int]:
-        try:
-            nuevo = self._repo.create(contrato)
-            return nuevo.id
-        except IntegrityError as e:
-            print(f"Error creando contrato: {e}")
-            self._repo.session.rollback()
-            return None
+    def _init_contrato_state(self, contrato: Contrato):
+        if contrato:
+            contrato.estados_disponibles = self._estado_service.get_estado_by_ambito("Contrato")
 
-    def crear_contrato_con_detalles(
-            self,
-            contrato: Contrato,
-            detalles: List[DetalleContrato],
-            detalles_service: DetalleContratoService
-    ) -> Optional[int]:
+            # AQUI EL CAMBIO: Usamos from_entity pasando el objeto Estado
+            # SQLAlchemy lo carga automáticamente (lazy loading) o vía joinedload
+            if contrato.Estado:
+                contrato._state = ContratoState.from_entity(contrato.Estado)
+            else:
+                # Si es un objeto nuevo o falló la carga
+                from domain.states.contrato.en_reservado import EnReservado
+                contrato._state = EnReservado()
+
+            contrato._state.context = contrato
+
+    def get_contrato_by_id(self, id: int) -> Optional[Contrato]:
+        contrato = self._repo.get_by_id(id)
+        self._init_contrato_state(contrato)
+        return contrato
+
+    def crear_contrato_reserva(self, contrato: Contrato, detalles: List[DetalleContrato]) -> Optional[int]:
         """
-        Crea Contrato y Detalles en una sola transacción atómica.
+        Crea un contrato en estado 'EnReservado' y reserva los vehículos asociados.
+        Todo en una sola transacción.
         """
         session = self._repo.session
         try:
-            # 1. Agregar contrato a la sesión (aún no commit)
+            # 1. Configurar estado inicial 'EnReservado'
+            est_reservado = self._estado_service.get_estado_by_name_and_ambito("EnReservado", "Contrato")
+            contrato.id_estado = est_reservado.id
+
+            # 2. Agregar contrato (flush para obtener ID)
             session.add(contrato)
-            session.flush()  # Esto genera el ID del contrato sin cerrar la transacción
+            session.flush()
 
-            contrato_id = contrato.id
-            print(f"Contrato pre-generado con ID: {contrato_id}")
+            # 3. Procesar detalles y Vehículos
+            for det in detalles:
+                det.id_contrato = contrato.id
+                session.add(det)
 
-            # 2. Asociar y agregar detalles
-            for detalle in detalles:
-                detalle.id_contrato = contrato_id
-                session.add(detalle)  # Agregamos a la misma sesión
+                # BLOQUEO DE VEHÍCULO:
+                # Debemos marcar los vehículos como 'Reservados'
+                # Accedemos al repositorio de vehículos a través de la sesión o relación si existiera
+                from domain.models.vehiculo import Vehiculo
+                vehiculo = session.query(Vehiculo).get(det.id_vehiculo)
 
-            # 3. Commit de TODO junto
+                # Inicializar state del vehículo para usar la lógica
+                # (Aquí simplificamos: forzamos el estado si está disponible)
+                # Idealmente usaríamos vehiculo_service, pero para atomicidad lo hacemos aquí o inyectamos el servicio
+
+                # Búsqueda de estado 'Reservado' para vehículo
+                est_v_reservado = self._estado_service.get_estado_by_name_and_ambito("Reservado", "Vehiculo")
+
+                # Validación simple: Si no está disponible, fallar transacción
+                # (Asumimos ID 1 = Disponible, o consultamos el estado actual)
+                est_v_disponible = self._estado_service.get_estado_by_name_and_ambito("Disponible", "Vehiculo")
+
+                if vehiculo.id_estado != est_v_disponible.id:
+                    raise Exception(f"El vehículo {vehiculo.patente} no está disponible para reservar.")
+
+                vehiculo.id_estado = est_v_reservado.id
+                session.add(vehiculo)  # Update
+
             session.commit()
-            return contrato_id
+            return contrato.id
 
-        except IntegrityError as e:
-            print(f"Error de integridad en transacción compleja: {e}")
-            session.rollback()  # Deshace contrato Y detalles
-            return None
         except Exception as e:
-            print(f"Error desconocido: {e}")
+            print(f"Fallo al crear reserva: {e}")
             session.rollback()
             return None
 
-    def get_contrato_by_id(self, contrato_id: int) -> Optional[Contrato]:
-        contrato = self._repo.get_by_id(contrato_id)
-        if contrato:
-            contrato.estados_disponibles = self._estados_contrato
-        return contrato
+    def confirmar_pago(self, contrato_id: int, monto: float) -> bool:
+        """
+        Registra el pago. Si es exitoso, pasa el contrato a 'EnCurso'
+        y los vehículos a 'Alquilado'.
+        """
+        contrato = self.get_contrato_by_id(contrato_id)
+        if not contrato: return False
 
-    # ... (update y otros métodos similares usando try/except IntegrityError) ...
+        # Intentar transición del contrato
+        if contrato.get_state().tomar_pago(monto):
 
-    def confirmar_pago_reserva(self, contrato: Contrato, monto: float, vehiculo_service, detalle_service) -> bool:
-        # Asegurarse de tener el objeto persistente conectado a la sesión
-        contrato = self._repo.update(contrato)  # Re-attach si es necesario
+            # Si el contrato pasó a EnCurso, movemos los vehículos a Alquilado
+            est_v_alquilado = self._estado_service.get_estado_by_name_and_ambito("Alquilado", "Vehiculo")
 
-        contrato.estados_disponibles = self._estados_contrato
+            for detalle in contrato.detalles_contrato:
+                vehiculo = detalle.Vehiculo  # SQLAlchemy relationship
+                vehiculo.id_estado = est_v_alquilado.id
+                # Aquí podríamos usar vehiculo.get_state().retirar() si quisiéramos ser puristas
 
-        if contrato.get_state().__class__.__name__ != 'EnReservado':
-            return False
+            try:
+                self._repo.update(contrato)  # Guarda contrato y vehículos cascada
+                return True
+            except Exception as e:
+                print(f"Error al confirmar pago: {e}")
+                self._repo.session.rollback()
+                return False
 
-        exito = contrato.get_state().tomar_pago(monto)
-        if not exito: return False
+        return False
 
-        # Actualizar vehículos
-        # Nota: Al usar ORM, si navegas por contrato.detalles_contrato (relationship),
-        # puedes acceder a los vehículos directamente sin el detalle_service si las relaciones están bien definidas.
-        # Si no, usa el servicio como antes.
+    def finalizar_alquiler(self, contrato_id: int, fecha_devolucion: datetime) -> bool:
+        """Recibe la devolución y cierra el contrato."""
+        contrato = self.get_contrato_by_id(contrato_id)
+        if not contrato: return False
 
-        try:
-            # Guardar cambios del contrato (nuevo estado)
+        exito, recargo = contrato.get_state().recibir_devolucion(fecha_devolucion)
+        if exito:
+            # Marcar vehículos como 'Entregado' (pendiente de revisión)
+            est_v_entregado = self._estado_service.get_estado_by_name_and_ambito("Entregado", "Vehiculo")
+
+            for detalle in contrato.detalles_contrato:
+                vehiculo = detalle.Vehiculo
+                vehiculo.id_estado = est_v_entregado.id
+                # Actualizar fecha real de entrega en el detalle
+                detalle.fecha_entrega = fecha_devolucion
+
             self._repo.update(contrato)
+            print(f"Contrato finalizado. Recargo calculado: ${recargo}")
             return True
-        except Exception as e:
-            print(f"Error confirmando pago: {e}")
-            self._repo.session.rollback()
-            return False
+
+        return False

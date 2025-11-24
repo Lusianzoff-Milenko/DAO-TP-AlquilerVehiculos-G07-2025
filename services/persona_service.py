@@ -1,41 +1,44 @@
-from typing import Optional
+from typing import Optional, List
+from sqlalchemy.exc import IntegrityError
 from domain.models.persona import Persona
 from data_access.repositories.persona_repository import PersonaRepository
 from services.utils import validate_string
-from services.validation_mapper import ValidationMapper
 
 
 class PersonaService:
-    def __init__(self, persona_repo: PersonaRepository, mapper=ValidationMapper):
+    def __init__(self, persona_repo: PersonaRepository):
         self._repo = persona_repo
-        self._mapper = mapper
 
-    def create_persona(self, persona: Persona) -> str | None:
-        error = validate_string(persona.nombre, "nombre", max_length=100)
-        if error:
-            return error
-        error = validate_string(persona.apellido, "apellido", max_length=100)
-        if error:
-            return error
-        error = validate_string(persona.telefono, "telefono", max_length=20)
-        if error:
-            return error
-        error = validate_string(persona.mail, "mail", max_length=100)
-        if error:
-            return error
-        error = validate_string(persona.direccion, "direccion", max_length=200)
-        if error:
-            return error
-        return self._repo.create(persona)
+    def create_persona(self, persona: Persona) -> Optional[int]:
+        # Validaciones básicas de formato (opcional, ya que la UI suele validarlo)
+        if not validate_string(persona.nombre, "nombre"): return None
+
+        try:
+            nueva_persona = self._repo.create(persona)
+            return nueva_persona.id
+        except IntegrityError:
+            print("Error: Ya existe una persona con ese mail o datos duplicados.")
+            self._repo.session.rollback()
+            return None
 
     def get_persona_by_id(self, persona_id: int) -> Optional[Persona]:
         return self._repo.get_by_id(persona_id)
 
+    def list_all_personas(self) -> List[Persona]:
+        return self._repo.list_all()
+
     def update_persona(self, persona: Persona) -> bool:
-        if not persona.id:
-            print("ID de persona requerido para actualizar.")
+        if not persona.id: return False
+        try:
+            self._repo.update(persona)
+            return True
+        except IntegrityError:
+            self._repo.session.rollback()
             return False
-        return self._repo.update(persona)
 
     def delete_persona(self, persona_id: int) -> bool:
-        return self._repo.delete(persona_id)
+        try:
+            return self._repo.delete(persona_id)
+        except IntegrityError:
+            self._repo.session.rollback()
+            return False
