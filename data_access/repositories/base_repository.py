@@ -1,44 +1,38 @@
-# python
-from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Iterable, Optional, List, Dict, Any
+from typing import Type, TypeVar, Generic, Optional, List
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from domain.models.base import Base
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Base)
 
+class SQLAlchemyRepository(Generic[T]):
+    def __init__(self, session: Session, model: Type[T]):
+        self.session = session
+        self.model = model
 
-class BaseRepository(Generic[T], ABC):
-    """Abstract repository interface (CRUD)."""
+    def get_by_id(self, id: int) -> Optional[T]:
+        return self.session.query(self.model).filter(self.model.id == id).first()
 
-    @abstractmethod
-    def add(self, entity: T) -> T:
-        raise NotImplementedError
+    def list_all(self) -> List[T]:
+        return self.session.query(self.model).all()
 
-    @abstractmethod
-    def add_all(self, entities: Iterable[T]) -> None:
-        raise NotImplementedError
+    def create(self, entity: T) -> T:
+        """Agrega y commitea. Lanza excepción si falla."""
+        self.session.add(entity)
+        self.session.commit()
+        self.session.refresh(entity)
+        return entity
 
-    @abstractmethod
-    def get(self, id: Any) -> Optional[T]:
-        raise NotImplementedError
+    def update(self, entity: T) -> T:
+        """Actualiza usando merge para asegurar que esté en la sesión."""
+        entity = self.session.merge(entity)
+        self.session.commit()
+        return entity
 
-    @abstractmethod
-    def list(self, filters: Optional[Dict[str, Any]] = None, offset: int = 0, limit: Optional[int] = None) -> List[T]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def update(self, entity: T, **kwargs) -> T:
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete(self, entity: T) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete_by_id(self, id: Any) -> None:
-        raise NotImplementedError
-
-    # Optional transactional methods (no-op by default)
-    def commit(self) -> None:
-        pass
-
-    def rollback(self) -> None:
-        pass
+    def delete(self, id: int) -> bool:
+        entity = self.get_by_id(id)
+        if entity:
+            self.session.delete(entity)
+            self.session.commit()
+            return True
+        return False

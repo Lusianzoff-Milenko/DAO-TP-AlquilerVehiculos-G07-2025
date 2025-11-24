@@ -6,7 +6,7 @@ from domain.states.vehiculo.state import State
 class Disponible(State):
     def reservar(self, contrato: Contrato) -> None:
         if contrato.fecha_desde.date().month == datetime.now().date().month and (contrato.fecha_desde.date().day - datetime.now().date().day) <= 3:
-            print(f"El vehiculo ha sido reservado por el empleado {contrato.Empleado.Persona.nombre}, para el cliente {contrato.Cliente.persona.nombre}.")
+            print(f"El vehiculo ha sido reservado por el empleado {contrato.get_empleado()}, para el cliente {contrato.get_cliente()}.")
             # 🚨 IMPORTACIÓN LOCAL
             from domain.states.vehiculo.reservado import Reservado
             self.context.transition_to(Reservado())

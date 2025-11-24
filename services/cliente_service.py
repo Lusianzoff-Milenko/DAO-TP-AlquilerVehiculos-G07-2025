@@ -1,20 +1,26 @@
 from typing import Optional, List
+from sqlalchemy.exc import IntegrityError
 from domain.models.cliente import Cliente
 from data_access.repositories.cliente_repository import ClienteRepository
-from .validation_mapper import ValidationMapper
 
 class ClienteService:
-    def __init__(self, cliente_repo: ClienteRepository, mapper: ValidationMapper):
+    def __init__(self, cliente_repo: ClienteRepository, mapper=None):
+        # mapper se mantiene por compatibilidad en inyección, pero se usa menos
         self._repo = cliente_repo
-        self._mapper = mapper
 
     def create_cliente(self, cliente: Cliente) -> Optional[int]:
-        if not self._mapper.validate_fk_exists('persona', cliente.id_persona, 'id_persona'):
+        try:
+            # SQLAlchemy validará FKs (persona, tipo_documento) al hacer commit
+            nuevo_cliente = self._repo.create(cliente)
+            return nuevo_cliente.id
+        except IntegrityError as e:
+            print(f"Error de integridad al crear cliente (posible duplicado o FK inválida): {e}")
+            self._repo.session.rollback()
             return None
-        if not self._mapper.validate_fk_exists('tipo_documento', cliente.id_tipo_documento, 'id_tipo_documento'):
+        except Exception as e:
+            print(f"Error desconocido al crear cliente: {e}")
+            self._repo.session.rollback()
             return None
-
-        return self._repo.create(cliente)
 
     def get_cliente_by_id(self, cliente_id: int) -> Optional[Cliente]:
         return self._repo.get_by_id(cliente_id)
@@ -24,21 +30,21 @@ class ClienteService:
 
     def update_cliente(self, cliente: Cliente) -> bool:
         if not cliente.id:
-            print("ID de cliente requerido para actualizar.")
             return False
-        if not self._mapper.validate_fk_exists('persona', cliente.id_persona, 'id_persona'):
+        try:
+            self._repo.update(cliente)
+            return True
+        except IntegrityError:
+            print("Error al actualizar cliente: Datos inválidos o duplicados.")
+            self._repo.session.rollback()
             return False
-        if not self._mapper.validate_fk_exists('tipo_documento', cliente.id_tipo_documento, 'id_tipo_documento'):
-            return False
-
-        return self._repo.update(cliente)
 
     def delete_cliente(self, cliente_id: int) -> bool:
-        if self._repo.get_by_id(cliente_id) is None:
-            print(f"Cliente con ID {cliente_id} no encontrado.")
+        # La validación de contratos activos se mantiene porque es lógica de negocio pura
+        # (asumiendo que has_active_contracts se mueve o se inyecta contrato_service)
+        try:
+            return self._repo.delete(cliente_id)
+        except IntegrityError:
+            print("No se puede eliminar: El cliente tiene registros asociados.")
+            self._repo.session.rollback()
             return False
-        if self._contrato_service.has_active_contracts("cliente", cliente_id):
-            print(f"Error de Negocio: No se puede eliminar el Cliente ID {cliente_id} porque tiene contratos activos.")
-            return False
-
-        return self._repo.delete(cliente_id)

@@ -1,8 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 from domain.models.contrato import Contrato
-from domain.models.estado import Estado
 
 if TYPE_CHECKING:
     from domain.models.vehiculo import Vehiculo

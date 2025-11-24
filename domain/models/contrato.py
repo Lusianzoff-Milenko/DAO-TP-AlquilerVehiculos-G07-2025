@@ -35,26 +35,39 @@ class Contrato(Base):
     _state: State = None
     estados_disponibles: List[Estado] = []
 
-    def get_state(self) -> State:
-        """Obtiene el estado actual del contrato."""
-        return self._state
-
     def __init__(self, **kw: Any) -> None:
         """
         Inicializa el contrato y establece su estado inicial.
         Si no se especifica id_estado, se inicializa como EnReservado (id=9).
         """
         super().__init__(**kw)
-        
+
         # Estado por defecto: EnReservado (9)
         if self.id_estado is None:
             self.id_estado = 9
-        
+
         # Crear instancia del estado usando Factory Method
         state = State.create_state(self.id_estado)
         self._state = state
         if self._state:
             self._state.context = self
+
+    def get_state(self) -> State:
+        """Obtiene el estado actual del contrato."""
+        return self._state
+
+    def get_cliente(self):
+        """Obtiene el cliente asociado al contrato."""
+        return self.Cliente
+
+    def get_empleado(self):
+        """Obtiene el empleado asociado al contrato."""
+        return self.Empleado
+
+    def add_detalle(self, detalle: DetalleContrato) -> None:
+        """Agrega un detalle al contrato."""
+        self.detalles_contrato.append(detalle)
+        detalle.id_contrato = self.id
 
     def transition_to(self, state: State):
         """

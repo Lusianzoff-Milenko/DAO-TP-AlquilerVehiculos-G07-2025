@@ -1,51 +1,64 @@
 from dependency_injector import containers, providers
 
-# Importa tus clases de repositorios, servicios, etc.
-from data_access.repositories import (VehiculoRepository, ModeloRepository, ColorRepository,
-                                      EstadoRepository, ContratoRepository, ClienteRepository,
-                                      MetodoDePagoRepository, EmpleadoRepository, DetalleContratoRepository,
-                                      MarcaRepository, TipoDocumentoRepository, TipoPuestoRepository,
-                                      TipoInconvenienteRepository, InconvenienteRepository, MantenimientoRepository,
-                                      PersonaRepository, FotoXModeloRepository, ModeloXColorRepository)
-from services import (VehiculoService, ContratoService, EstadoService,
-                      DetalleContratoService, MarcaService, ModeloService,
-                      ClienteService, TipoPuestoService, EmpleadoService,
-                      TipoInconvenienteService, InconvenienteService, MantenimientoService,
-                      ColorService, MetodoDePagoService, TipoDocumentoService,
-                      PersonaService, FotoXModeloService, ModeloXColorService)
+# 1. Importamos la configuración de BD refactorizada
+# Asegúrate de haber creado config/database_sqlalchemy.py como se indicó
+from config.database_sqlalchemy import SessionLocal
+
+# 2. Importamos Repositorios
+from data_access.repositories import (
+    VehiculoRepository, ModeloRepository, ColorRepository,
+    EstadoRepository, ContratoRepository, ClienteRepository,
+    MetodoDePagoRepository, EmpleadoRepository, DetalleContratoRepository,
+    MarcaRepository, TipoDocumentoRepository, TipoPuestoRepository,
+    TipoInconvenienteRepository, InconvenienteRepository, MantenimientoRepository,
+    PersonaRepository, FotoXModeloRepository, ModeloXColorRepository
+)
+
+# 3. Importamos Servicios
+from services import (
+    VehiculoService, ContratoService, EstadoService,
+    DetalleContratoService, MarcaService, ModeloService,
+    ClienteService, TipoPuestoService, EmpleadoService,
+    TipoInconvenienteService, InconvenienteService, MantenimientoService,
+    ColorService, MetodoDePagoService, TipoDocumentoService,
+    PersonaService, FotoXModeloService, ModeloXColorService
+)
+
 from services.validation_mapper import ValidationMapper
 
 
 class Container(containers.DeclarativeContainer):
-    # Configuración (si tuvieras, ej: conexión a BD)
     config = providers.Configuration()
 
-    # --- Definir Repositorios (como Singletons) ---
-    # Singleton significa que solo se crea UNA instancia y se reutiliza
-    modelo_repo = providers.Singleton(ModeloRepository)
-    color_repo = providers.Singleton(ColorRepository)
-    estado_repo = providers.Singleton(EstadoRepository)
-    vehiculo_repo = providers.Singleton(VehiculoRepository)
-    contrato_repo = providers.Singleton(ContratoRepository)
-    cliente_repo = providers.Singleton(ClienteRepository)
-    metodo_pago_repo = providers.Singleton(MetodoDePagoRepository)
-    empleado_repo = providers.Singleton(EmpleadoRepository)
-    detalle_contrato_repo = providers.Singleton(DetalleContratoRepository)
-    marca_repo = providers.Singleton(MarcaRepository)
-    tipo_documento_repo = providers.Singleton(TipoDocumentoRepository)
-    tipo_puesto_repo = providers.Singleton(TipoPuestoRepository)
-    tipo_inconveniente_repo = providers.Singleton(TipoInconvenienteRepository)
-    inconveniente_repo = providers.Singleton(InconvenienteRepository)
-    mantenimiento_repo = providers.Singleton(MantenimientoRepository)
-    persona_repo = providers.Singleton(PersonaRepository)
-    fotoxmodelo_repo = providers.Singleton(FotoXModeloRepository)
-    modeloxcolor_repo = providers.Singleton(ModeloXColorRepository)
+    # --- Gestión de Sesión de Base de Datos ---
+    # Proveedor de recurso para la Sesión de SQLAlchemy.
+    # Esto asegura que la sesión se cree y se cierre correctamente.
+    db_session = providers.Resource(SessionLocal)
 
-    # El contenedor puede inyectar dependencias en otros servicios
+    # --- Repositorios (Inyectando la sesión) ---
+    # Cambiamos a Factory para que reciban la sesión actual del contexto.
 
-    # --- Tu Validación ---
-    # Este es un buen candidato para un Factory,
-    # ya que es una dependencia de tu servicio.
+    modelo_repo = providers.Factory(ModeloRepository, session=db_session)
+    color_repo = providers.Factory(ColorRepository, session=db_session)
+    estado_repo = providers.Factory(EstadoRepository, session=db_session)
+    vehiculo_repo = providers.Factory(VehiculoRepository, session=db_session)
+    contrato_repo = providers.Factory(ContratoRepository, session=db_session)
+    cliente_repo = providers.Factory(ClienteRepository, session=db_session)
+    metodo_pago_repo = providers.Factory(MetodoDePagoRepository, session=db_session)
+    empleado_repo = providers.Factory(EmpleadoRepository, session=db_session)
+    detalle_contrato_repo = providers.Factory(DetalleContratoRepository, session=db_session)
+    marca_repo = providers.Factory(MarcaRepository, session=db_session)
+    tipo_documento_repo = providers.Factory(TipoDocumentoRepository, session=db_session)
+    tipo_puesto_repo = providers.Factory(TipoPuestoRepository, session=db_session)
+    tipo_inconveniente_repo = providers.Factory(TipoInconvenienteRepository, session=db_session)
+    inconveniente_repo = providers.Factory(InconvenienteRepository, session=db_session)
+    mantenimiento_repo = providers.Factory(MantenimientoRepository, session=db_session)
+    persona_repo = providers.Factory(PersonaRepository, session=db_session)
+    fotoxmodelo_repo = providers.Factory(FotoXModeloRepository, session=db_session)
+    modeloxcolor_repo = providers.Factory(ModeloXColorRepository, session=db_session)
+
+    # --- Mappers de Validación ---
+    # ValidationMapper utiliza los repositorios para verificar la existencia de claves foráneas.
 
     detalle_contrato_validation_mapper = providers.Factory(
         ValidationMapper,
@@ -66,7 +79,6 @@ class Container(containers.DeclarativeContainer):
 
     vehiculo_validation_mapper = providers.Factory(
         ValidationMapper,
-        # ¡CORRECCIÓN! Usamos el nombre 'repositories' que acepta el constructor
         repositories={
             'modelo': modelo_repo,
             'color': color_repo,
@@ -74,10 +86,8 @@ class Container(containers.DeclarativeContainer):
         }
     )
 
-    # 2. Mapper específico para ContratoService
     contrato_validation_mapper = providers.Factory(
         ValidationMapper,
-        # ¡CORRECCIÓN! Usamos el nombre 'repositories'
         repositories={
             'cliente': cliente_repo,
             'vehiculo': vehiculo_repo,
@@ -134,6 +144,9 @@ class Container(containers.DeclarativeContainer):
         }
     )
 
+    # --- Servicios ---
+    # Los servicios reciben los repositorios (que ya tienen la sesión inyectada).
+
     modeloxcolor_service = providers.Factory(
         ModeloXColorService,
         mxc_repo=modeloxcolor_repo,
@@ -143,7 +156,8 @@ class Container(containers.DeclarativeContainer):
     persona_service = providers.Factory(
         PersonaService,
         persona_repo=persona_repo,
-        mapper = inconveniente_validation_mapper
+        # Se mantiene el mapper original aunque PersonaService tiene pocas validaciones FK
+        mapper=inconveniente_validation_mapper
     )
 
     marca_service = providers.Factory(
@@ -173,7 +187,8 @@ class Container(containers.DeclarativeContainer):
 
     metodo_pago_service = providers.Factory(
         MetodoDePagoService,
-        metodo_pago_repo=metodo_pago_repo)
+        metodo_pago_repo=metodo_pago_repo
+    )
 
     inconveniente_service = providers.Factory(
         InconvenienteService,
@@ -201,14 +216,14 @@ class Container(containers.DeclarativeContainer):
 
     estado_service = providers.Factory(
         EstadoService,
-        estado_repo=estado_repo  # <-- ¡Añadido!
+        estado_repo=estado_repo
     )
 
     contrato_service = providers.Factory(
         ContratoService,
         contrato_repo=contrato_repo,
         estado_service=estado_service,
-        validation_mapper=contrato_validation_mapper  # <-- Le pasamos el nuevo mapper
+        validation_mapper=contrato_validation_mapper
     )
 
     fotoxmodelo_service = providers.Factory(
@@ -222,15 +237,15 @@ class Container(containers.DeclarativeContainer):
         DetalleContratoService,
         detalle_repo=detalle_contrato_repo,
         contrato_repo=contrato_repo,
-        vehiculo_repo=vehiculo_repo,  # <-- NECESARIO
-        mapper=detalle_contrato_validation_mapper  # <-- NECESARIO (Asegúrate de que esté definido)
+        vehiculo_repo=vehiculo_repo,
+        mapper=detalle_contrato_validation_mapper
     )
 
     mantenimiento_service = providers.Factory(
         MantenimientoService,
         mantenimiento_repo=mantenimiento_repo,
         mapper=mantenimiento_validation_mapper,
-        estado_service= estado_service
+        estado_service=estado_service
     )
 
     vehiculo_service = providers.Factory(
@@ -239,7 +254,6 @@ class Container(containers.DeclarativeContainer):
         contrato_service=contrato_service,
         mapper=vehiculo_validation_mapper,
         detalle_contrato_service=detalle_contrato_service,
-        estado_service= estado_service,
-        mantenimiento_service= mantenimiento_service# <-- Este usa el mapper de vehículo
+        estado_service=estado_service,
+        mantenimiento_service=mantenimiento_service
     )
-

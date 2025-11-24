@@ -51,8 +51,11 @@ class Vehiculo(Base):
             self._state.context = self
             nuevo_estado_nombre = type(state).__name__
             encontrado = False
+            print(f"somos estados disponibles: {self.estados_disponibles}")
             for estado in self.estados_disponibles:
-                if estado.nombre == nuevo_estado_nombre:
+                print(f"Estado: {estado.__name__.lower()}, Buscando: {nuevo_estado_nombre.lower()}")
+                if estado.__class__.nombre.lower() == nuevo_estado_nombre.lower():
+                    print(f"Estado: {estado.__name__.lower()}, Buscando: {nuevo_estado_nombre.lower()}")
                     self.id_estado = estado.id
                     encontrado = True
                     break
