@@ -1,76 +1,70 @@
-# ui/app.py
 import dearpygui.dearpygui as dpg
 from ui.theme import install_theme
 from ui.navigation import go_to
+from ui.icons import *  # Importar iconos
 
+# Importamos las vistas
 from ui.windows.home import register as register_home
 from ui.windows.login import register as register_login
 from ui.windows.clientes import register as register_clientes
 from ui.windows.vehiculos import register as register_vehiculos
 
-SIDEBAR_WIDTH = 220
+SIDEBAR_WIDTH = 250
 
 
 def _build_layout():
-    with dpg.window(tag="root", label="Drive&Go Fleet Manager"):
-        # HEADER (Barra superior)
+    with dpg.window(tag="root", label="Drive&Go System"):
+        # HEADER
         with dpg.group(horizontal=True):
             with dpg.group(width=SIDEBAR_WIDTH):
                 dpg.add_spacer(height=5)
-                # Texto grande y centrado simulado con padding
+                # Logo con icono de auto
                 with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=15)
-                    dpg.add_text("DRIVE & GO", color=(56, 140, 255, 255))
+                    dpg.add_spacer(width=10)
+                    dpg.add_text(f"{ICON_CAR}  DRIVE & GO", color=(56, 170, 255, 255))
 
-            # Línea vertical separadora
             dpg.add_spacer(width=10)
-            dpg.add_text("|", color=(80, 80, 80))
+            dpg.add_text("|")
             dpg.add_spacer(width=10)
-            dpg.add_text("Panel de Administración", color=(150, 150, 150))
+            dpg.add_text(f"Panel de Control", color=(150, 150, 150))
 
         dpg.add_separator()
 
-        # CUERPO PRINCIPAL (Sidebar + Contenido)
+        # MAIN LAYOUT
         with dpg.group(tag="main_layout", horizontal=True):
-            # 1. Sidebar (Menú)
+            # --- SIDEBAR ---
             with dpg.child_window(tag="sidebar", width=SIDEBAR_WIDTH, height=-1, border=False):
-                dpg.add_spacer(height=15)
+                dpg.add_spacer(height=10)
 
-                # Sección PRINCIPAL
-                dpg.add_text("   NAVEGACION", color=(100, 100, 100))
+                # Grupo de Navegación
+                dpg.add_text("   PRINCIPAL", color=(100, 100, 100))
                 dpg.add_spacer(height=5)
-                _add_menu_btn("Dashboard", "home")
-                _add_menu_btn("Clientes", "clientes")
-                _add_menu_btn("Vehiculos", "vehiculos")
-                _add_menu_btn("Empleados", "empleados")
+
+                _add_menu_btn(f"{ICON_DASHBOARD}  Dashboard", "home")
+                _add_menu_btn(f"{ICON_USERS}  Clientes", "clientes")
+                _add_menu_btn(f"{ICON_CAR}  Vehículos", "vehiculos")
+                _add_menu_btn(f"{ICON_USER}  Empleados", "empleados")
 
                 dpg.add_spacer(height=20)
-
-                # Sección OPERATIVA
-                dpg.add_text("   OPERACIONES", color=(100, 100, 100))
+                dpg.add_text("   GESTIÓN", color=(100, 100, 100))
                 dpg.add_spacer(height=5)
-                _add_menu_btn("Alquileres", "alquileres")
-                _add_menu_btn("Reservas", "reservas")
-                _add_menu_btn("Mantenimiento", "mantenimiento")
+
+                _add_menu_btn(f"{ICON_LIST}  Alquileres", "alquileres")
+                _add_menu_btn(f"{ICON_CALENDAR}  Reservas", "reservas")
+                _add_menu_btn(f"{ICON_WRENCH}  Mantenimiento", "mantenimiento")
+                _add_menu_btn(f"{ICON_CHART}  Reportes", "reportes")
 
                 dpg.add_spacer(height=40)
                 dpg.add_separator()
                 dpg.add_spacer(height=10)
 
-                # Botón Salir
-                _add_menu_btn("Cerrar Sesion", "login", is_logout=True)
+                _add_menu_btn(f"{ICON_LOGOUT}  Salir", "login", is_logout=True)
 
-            # 2. Separador Vertical Fino
-            with dpg.theme() as theme_border:
-                with dpg.theme_component(dpg.mvAll):
-                    dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (60, 65, 75, 255))
-
-            # 3. Area de Contenido
+            # --- CONTENT AREA ---
+            # width=-1 hace que ocupe TODO el espacio restante automáticamente
             with dpg.group(width=-1, height=-1):
-                # Pequeño margen a la izquierda del contenido
                 with dpg.group(horizontal=True):
-                    dpg.add_spacer(width=10)
-                    # El child_window que contendrá las vistas
+                    dpg.add_spacer(width=5)
                     with dpg.child_window(tag="content_area", width=-1, height=-1, border=False):
                         pass
 
@@ -78,37 +72,42 @@ def _build_layout():
 
 
 def _add_menu_btn(label, view_name, is_logout=False):
-    """Crea botones de menú limpios y anchos."""
+    """Crea un botón de menú que se auto-ajusta al ancho."""
 
     def _cb(s, a):
         go_to(view_name)
 
-    # Tema especial para el botón de salir
     btn_theme = None
     if is_logout:
         with dpg.theme() as theme:
             with dpg.theme_component(dpg.mvButton):
                 dpg.add_theme_color(dpg.mvThemeCol_Button, (80, 30, 30, 255))
-                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (120, 40, 40, 255))
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (130, 40, 40, 255))
         btn_theme = theme
 
-    # Usamos un grupo horizontal para dar un pequeño margen izquierdo al botón
-    with dpg.group(horizontal=True):
-        dpg.add_spacer(width=10)  # Margen izquierdo
-        btn = dpg.add_button(label=label, width=-15, height=32, callback=_cb)
+    # width=-1 hace que el botón se estire horizontalmente
+    # alignment=0.0 alinea el texto a la izquierda (típico de menús)
+    btn = dpg.add_button(label=f"  {label}", width=-1, height=35, callback=_cb)
 
-        if btn_theme:
-            dpg.bind_item_theme(btn, btn_theme)
+    # Ajustar alineación del texto a la izquierda (hack de tema)
+    with dpg.theme() as align_theme:
+        with dpg.theme_component(dpg.mvButton):
+            dpg.add_theme_style(dpg.mvStyleVar_ButtonTextAlign, 0.0, 0.5)  # X=0 (Izquierda), Y=0.5 (Centro)
+            if is_logout:  # Reaplicar colores si es logout
+                dpg.add_theme_color(dpg.mvThemeCol_Button, (80, 30, 30, 255))
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (130, 40, 40, 255))
 
-    dpg.add_spacer(height=3)
+    dpg.bind_item_theme(btn, align_theme)
+    dpg.add_spacer(height=2)
 
 
 def run_app():
     dpg.create_context()
-    # Tamaño HD estándar
-    dpg.create_viewport(title="Drive&Go System", width=1280, height=768)
+    dpg.create_viewport(title="Drive&Go System", width=1280, height=800)
 
-    install_theme()  # Cargará la fuente del sistema
+    # Instalar tema (esto descargará la fuente automáticamente)
+    install_theme()
+
     _build_layout()
 
     register_login()

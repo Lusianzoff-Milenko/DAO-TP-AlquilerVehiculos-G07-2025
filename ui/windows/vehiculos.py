@@ -76,15 +76,25 @@ def register():
         # Tabla directa
         with dpg.table(tag=_TABLE_TAG, header_row=True, borders_innerH=True, row_background=True,
                        policy=dpg.mvTable_SizingStretchProp, scrollY=True, height=-1):
-            dpg.add_table_column(label="ID", width_fixed=True)
-            dpg.add_table_column(label="Patente")
-            dpg.add_table_column(label="Marca")
-            dpg.add_table_column(label="Modelo")
-            dpg.add_table_column(label="Color")
-            dpg.add_table_column(label="Año")
-            dpg.add_table_column(label="Precio")
-            dpg.add_table_column(label="Estado")
-            dpg.add_table_column(label="Acciones", width_fixed=True)
+            # Columnas Fijas (IDs, Fechas cortas, Botones)
+            dpg.add_table_column(label="ID", width_fixed=True, init_width_or_weight=40)
+            dpg.add_table_column(label="Patente", width_fixed=True, init_width_or_weight=80)
+
+            # Columnas Flexibles (Se estiran para llenar el espacio y mostrar todo el texto)
+            # Al quitar width_fixed=True, se vuelven elásticas
+            dpg.add_table_column(label="Marca", width_stretch=True, init_width_or_weight=1.0)
+            dpg.add_table_column(label="Modelo", width_stretch=True,
+                                 init_width_or_weight=1.5)  # Le damos más peso al modelo
+            dpg.add_table_column(label="Color", width_stretch=True, init_width_or_weight=0.8)
+
+            dpg.add_table_column(label="Año", width_fixed=True, init_width_or_weight=60)
+            dpg.add_table_column(label="Precio", width_fixed=True, init_width_or_weight=80)
+
+            # Estado flexible
+            dpg.add_table_column(label="Estado", width_stretch=True, init_width_or_weight=1.0)
+
+            # Acciones fija al final
+            dpg.add_table_column(label="Acciones", width_fixed=True, init_width_or_weight=110)
 
     # Formulario
     _form_dialog = FormDialog(

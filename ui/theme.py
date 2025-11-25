@@ -1,77 +1,70 @@
-# ui/theme.py
-import dearpygui.dearpygui as dpg
 import os
-import platform
+import dearpygui.dearpygui as dpg
 
 
-def _load_system_font():
-    """Intenta cargar una fuente del sistema para mejor calidad."""
-    # Registro de fuente
+def _load_fonts():
+    """Carga la fuente del sistema para texto de alta calidad."""
     with dpg.font_registry():
-        # Intentamos buscar rutas comunes de fuentes en Windows/Linux
-        possible_paths = [
-            "C:/Windows/Fonts/segoeui.ttf",  # Windows moderna
-            "C:/Windows/Fonts/arial.ttf",  # Windows clásica
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
-            "/System/Library/Fonts/Helvetica.ttc"  # Mac
-        ]
+        # Ruta a fuente de Windows (Alta Calidad)
+        main_font_path = "C:/Windows/Fonts/segoeui.ttf"
 
-        font_loaded = False
-        for path in possible_paths:
-            if os.path.exists(path):
-                # Tamaño 18 para que se vea nítido y legible
-                try:
-                    # Agregamos soporte para caracteres latinos y símbolos básicos
-                    with dpg.font(path, 20) as font_id:
-                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
-                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
-                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Japanese)
+        # Si no existe (ej. Linux/Mac), usamos Arial
+        if not os.path.exists(main_font_path):
+            main_font_path = "C:/Windows/Fonts/arial.ttf"
 
-                    dpg.bind_font(font_id)
-                    print(f"✅ Fuente cargada: {path}")
-                    font_loaded = True
-                    break
-                except Exception as e:
-                    print(f"⚠️ No se pudo cargar la fuente {path}: {e}")
+        try:
+            # Cargamos solo la fuente principal, tamaño 20 para claridad
+            with dpg.font(main_font_path, 20) as default_font:
+                # Agregamos caracteres extendidos para evitar '??' en acentos
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
 
-        if not font_loaded:
-            print("⚠️ Usando fuente por defecto (puede verse pixelada).")
+            dpg.bind_font(default_font)
+            print(f"✅ Fuente HD cargada: {main_font_path}")
+
+        except Exception as e:
+            print(f"⚠️ No se pudo cargar fuente del sistema: {e}. Usando default.")
 
 
-def _install_base_theme():
-    with dpg.theme() as base_theme:
+def _install_theme_styles():
+    with dpg.theme() as global_theme:
         with dpg.theme_component(dpg.mvAll):
-            # Estilo geométrico moderno
+            # --- GEOMETRÍA MODERNA ---
             dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 8)
             dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 4)
             dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 4)
-            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 6)
             dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 8, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 10, 10)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 12, 12)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 6)  # Botones más grandes
 
-            # Colores Generales (Gris Azulado Profundo)
-            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (30, 33, 38, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (36, 40, 46, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (60, 65, 75, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (40, 45, 55, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (56, 117, 215, 255))
+            # --- PALETA "MIDNIGHT PRO" ---
+            bg_color = (20, 22, 25, 255)  # Fondo muy oscuro
+            panel_color = (32, 34, 40, 255)  # Paneles gris acero
+            primary = (0, 110, 200, 255)  # Azul Corporativo
+            primary_hover = (30, 130, 220, 255)
 
-            # Textos
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (230, 235, 240, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, bg_color)
+            dpg.add_theme_color(dpg.mvThemeCol_ChildBg, panel_color)
+            dpg.add_theme_color(dpg.mvThemeCol_Border, (50, 55, 60, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, panel_color)
 
-            # Botones
-            dpg.add_theme_color(dpg.mvThemeCol_Button, (50, 55, 65, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (60, 120, 200, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (50, 100, 180, 255))
+            # Botones y Headers
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (45, 47, 55, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, primary)
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (0, 90, 160, 255))
 
-            # Headers de tablas
-            dpg.add_theme_color(dpg.mvThemeCol_Header, (50, 55, 65, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (70, 75, 85, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (90, 95, 105, 255))
+            # Texto e Inputs
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (25, 27, 30, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (225, 225, 225, 255))
 
-    dpg.bind_theme(base_theme)
+            # Tablas
+            dpg.add_theme_color(dpg.mvThemeCol_Header, (45, 47, 55, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, primary_hover)
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, primary)
+
+    dpg.bind_theme(global_theme)
 
 
 def install_theme():
-    _load_system_font()
-    _install_base_theme()
+    _load_fonts()
+    _install_theme_styles()
