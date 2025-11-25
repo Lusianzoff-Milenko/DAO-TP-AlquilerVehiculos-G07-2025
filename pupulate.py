@@ -8,6 +8,7 @@ from domain.models.detalle_contrato import DetalleContrato
 from domain.models.empleado import Empleado
 from domain.models.estado import Estado
 from domain.models.fotoXModelo import FotoXModelo
+from domain.models.mantenimiento import Mantenimiento
 from domain.models.marca import Marca
 from domain.models.metodoDePago import MetodoDePago
 from domain.models.modelo import Modelo
@@ -199,6 +200,65 @@ def main():
             print("   -> Estado Mantenimiento: EnDiagnostico")
         else:
             print("❌ Falló el envío a mantenimiento.")
+
+        # ==============================================================================
+        # 16. DATOS DE PRUEBA PARA MANTENIMIENTO (FORZADO)
+        # ==============================================================================
+        print("🔧 Creando datos de mantenimiento forzados...")
+
+        # Recuperamos los IDs de los estados necesarios para no adivinar
+        est_mantenimiento = servicios['estado'].get_estado_by_name_and_ambito("EnMantenimiento", "Vehiculo")
+        est_diagnostico = servicios['estado'].get_estado_by_name_and_ambito("EnDiagnostico", "Mantenimiento")
+        est_reparacion = servicios['estado'].get_estado_by_name_and_ambito("EnReparacion", "Mantenimiento")
+
+        # CASO 1: Un Honda Civic que recién entra (En Diagnóstico)
+        civic_roto = Vehiculo(
+            id_modelo=3,  # Honda Civic
+            patente="TALLER01",
+            nro_chasis="CH_TALLER_01",
+            id_color=3,  # Negro
+            anio_fabricacion=datetime(2021, 5, 10),
+            precio_base=6000.0,
+            id_estado=est_mantenimiento.id  # Lo creamos directamente roto
+        )
+        v1_id = servicios['vehiculo'].create_vehiculo(civic_roto)
+
+        if v1_id:
+            mant_1 = Mantenimiento(
+                id_vehiculo=v1_id,
+                costo=0.0,  # Aún no se sabe el costo
+                descripcion="El motor hace un ruido metálico al acelerar",
+                id_empleado=2,  # Mecánico Maria
+                id_estado=est_diagnostico.id,
+                fecha_hora=datetime.now()
+            )
+            # Usamos el repositorio directo para saltar validaciones de servicio
+            servicios['mantenimiento']._repo.create(mant_1)
+            print("   -> Honda Civic ingresado a Diagnóstico.")
+
+        # CASO 2: Una Ford F-150 que ya se está arreglando (En Reparación)
+        ford_rota = Vehiculo(
+            id_modelo=2,  # Ford F-150
+            patente="TALLER02",
+            nro_chasis="CH_TALLER_02",
+            id_color=4,  # Blanco
+            anio_fabricacion=datetime(2019, 11, 20),
+            precio_base=8500.0,
+            id_estado=est_mantenimiento.id  # También está en mantenimiento
+        )
+        v2_id = servicios['vehiculo'].create_vehiculo(ford_rota)
+
+        if v2_id:
+            mant_2 = Mantenimiento(
+                id_vehiculo=v2_id,
+                costo=150000.0,  # Ya tiene presupuesto
+                descripcion="Cambio de bomba de agua y correa de distribución",
+                id_empleado=2,  # Mecánico Maria
+                id_estado=est_reparacion.id,
+                fecha_hora=datetime.now()
+            )
+            servicios['mantenimiento']._repo.create(mant_2)
+            print("   -> Ford F-150 ingresada directo a Reparación.")
 
 
 if __name__ == '__main__':

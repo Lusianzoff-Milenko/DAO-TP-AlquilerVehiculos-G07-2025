@@ -67,7 +67,7 @@ class ReporteService:
         return [
             {
                 "Foto": v.foto, "Modelo": f"{v.marca} {v.modelo} ({v.anio})",
-                "Color": v.color, "Patente": v.patente,
+                "Color": v.color,
                 "Config": f"{v.pasajeros} Pasj. / {v.puertas} Ptas.",
                 "Precio": v.precio, "Estado": v.estado
             }

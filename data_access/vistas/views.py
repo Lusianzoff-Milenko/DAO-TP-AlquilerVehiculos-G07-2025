@@ -68,12 +68,10 @@ class VistaUtilizacionFlota(Base):
 
 class VistaVehiculosDetallados(Base):
     __tablename__ = 'VistaVehiculosDetallados'
-    # Al no tener ID único claro, mapeamos una clave compuesta o usamos row_number si fuera necesario.
-    # Para lectura simple, podemos "engañar" a SQLAlchemy marcando patente como PK.
-    patente = Column("Patente", String, primary_key=True)
     modelo = Column("Modelo", String)
     marca = Column("Marca", String)
     color = Column("Color", String)
+    patente = Column("Patente", String, primary_key=True)
     foto = Column("Foto", String)
     anio = Column("Año", String)
     puertas = Column("Cantidad_Puertas", Integer)

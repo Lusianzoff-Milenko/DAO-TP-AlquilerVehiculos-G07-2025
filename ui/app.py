@@ -9,6 +9,7 @@ from ui.windows.home import register as register_home
 from ui.windows.login import register as register_login
 from ui.windows.clientes import register as register_clientes
 from ui.windows.vehiculos import register as register_vehiculos
+from ui.windows.reportes import register as register_reportes
 
 SIDEBAR_WIDTH = 250
 
@@ -45,6 +46,7 @@ def _build_layout():
                 _add_menu_btn(f"{ICON_USERS}  Clientes", "clientes")
                 _add_menu_btn(f"{ICON_CAR}  Vehículos", "vehiculos")
                 _add_menu_btn(f"{ICON_USER}  Empleados", "empleados")
+                _add_menu_btn(f"{ICON_CHART}  Reportes", "reportes")
 
                 dpg.add_spacer(height=20)
                 dpg.add_text("   GESTIÓN", color=(100, 100, 100))
@@ -119,6 +121,7 @@ def run_app():
     register_home()
     register_clientes(cliente_controller)
     register_vehiculos()
+    register_reportes()
 
     dpg.configure_item("sidebar", show=False)
     go_to("login")
