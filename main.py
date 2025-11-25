@@ -11,7 +11,7 @@ def main():
     container: Container = Container()
     contrato_service = container.contrato_service()
     vehiculo_service = container.vehiculo_service()
-    contrato = Contrato(
+    """contrato = Contrato(
                 id_cliente=1,
                 fecha_desde=datetime(2026, 1, 1),
                 fecha_hasta=datetime(2026, 2, 10),
@@ -36,8 +36,10 @@ def main():
         )
     ]
     contrato_service.crear_contrato_reserva(contrato, detalles_ejemplo)
-    print("Contrato de reserva creado con éxito.")
+    print("Contrato de reserva creado con éxito.")"""
     print(vehiculo_service.get_vehiculo_by_id(1))
+    vehiculo = vehiculo_service.get_vehiculo_by_id(2).get_state().reincorporar(razon="Recerva cancelada")
+    print(vehiculo)
 
 
 if __name__ == "__main__":
