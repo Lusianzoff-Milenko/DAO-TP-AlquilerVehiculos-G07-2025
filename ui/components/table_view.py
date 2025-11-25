@@ -35,7 +35,8 @@ class TableView:
         
     def render(self, parent: str):
         """Renderiza la tabla completa."""
-        with dpg.child_window(tag=self.container_tag, parent=parent, border=False):
+        # CAMBIO AQUÍ: Agregamos width=-1 y height=-1 para que ocupe todo el espacio
+        with dpg.child_window(tag=self.container_tag, parent=parent, border=False, width=-1, height=-1):
             # Barra de búsqueda
             if self.searchable:
                 with dpg.group(horizontal=True):

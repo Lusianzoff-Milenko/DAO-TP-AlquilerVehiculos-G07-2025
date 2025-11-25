@@ -1,5 +1,7 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from sqlalchemy.orm import Session, joinedload
+
+from domain.models.modelo import Modelo
 from domain.models.vehiculo import Vehiculo
 from data_access.repositories.base_repository import SQLAlchemyRepository
 
@@ -17,7 +19,12 @@ class VehiculoRepository(SQLAlchemyRepository[Vehiculo]):
             .options(joinedload(Vehiculo.Estado)) \
             .filter(Vehiculo.id == id).first()
 
-    def list_all(self) -> List[Vehiculo]:
+    def list_all(self) -> list[type[Vehiculo]]:
+        # Carga ansiosa (Eager Loading) de todas las relaciones necesarias para la tabla
         return self.session.query(Vehiculo) \
-            .options(joinedload(Vehiculo.Estado)) \
+            .options(
+                joinedload(Vehiculo.Estado),
+                joinedload(Vehiculo.Color),
+                joinedload(Vehiculo.Modelo).joinedload(Modelo.Marca) # Carga Modelo y su Marca
+            ) \
             .all()
