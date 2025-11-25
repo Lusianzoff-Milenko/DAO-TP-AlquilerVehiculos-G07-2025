@@ -5,6 +5,7 @@ from ui.navigation import go_to
 from ui.windows.home import register as register_home
 from ui.windows.login import register as register_login
 from ui.windows.clientes import register as register_clientes
+from ui.windows.vehiculos import register as register_vehiculos
 
 # Configuración del sidebar
 SIDEBAR_WIDTH = 200
@@ -102,6 +103,7 @@ def run_app():
     register_login()
     register_home()
     register_clientes()
+    register_vehiculos()
     
     # Ocultar sidebar al inicio (solo visible después del login)
     dpg.configure_item("sidebar", show=False)

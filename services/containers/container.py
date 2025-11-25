@@ -31,6 +31,7 @@ from services import (
 )
 from services.reporte_service import ReporteService
 
+from controlladores.controller_vehiculo import VehiculoController
 
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
@@ -109,6 +110,7 @@ class Container(containers.DeclarativeContainer):
         estado_service=estado_service
     )
 
+
     vehiculo_service = providers.Factory(
         VehiculoService,
         vehiculo_repo=vehiculo_repo,
@@ -125,4 +127,11 @@ class Container(containers.DeclarativeContainer):
         vista_facturacion_repo=vista_facturacion_repo,
         vista_utilizacion_repo=vista_utilizacion_repo,
         vista_vehiculos_repo=vista_vehiculos_repo
+    )
+
+    vehiculo_controller = providers.Factory(
+        VehiculoController,
+        vehiculo_service=vehiculo_service,
+        modelo_service=modelo_service,
+        color_service=color_service
     )
