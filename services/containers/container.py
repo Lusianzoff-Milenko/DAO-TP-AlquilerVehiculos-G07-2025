@@ -35,6 +35,7 @@ from controlladores.controller_vehiculo import VehiculoController
 from controlladores.controller_cliente import ClienteController
 from controlladores.controlle_empleado import EmpleadoController
 from controlladores.controller_contrato import ContratoController
+from controlladores.controller_mantenimiento import MantenimientoController
 
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
@@ -160,4 +161,11 @@ class Container(containers.DeclarativeContainer):
         cliente_service=cliente_service,
         empleado_service=empleado_service,
         pago_service=metodo_pago_service
+    )
+
+    mantenimiento_controller = providers.Factory(
+        MantenimientoController,
+        mantenimiento_service=mantenimiento_service,
+        vehiculo_service=vehiculo_service,
+        empleado_service=empleado_service
     )
