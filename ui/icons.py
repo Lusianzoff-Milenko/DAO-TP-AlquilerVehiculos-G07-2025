@@ -1,25 +1,24 @@
 # ui/icons.py
 
-# Definimos iconos como etiquetas de texto.
-# Son seguros, no requieren fuentes externas y se ven profesionales (estilo terminal/dev).
+# Sin iconos - solo strings vacías para mantener compatibilidad
 
-ICON_DASHBOARD = "[ DASH ]"
-ICON_CAR       = "[ AUTO ]"
-ICON_USERS     = "[ CLIE ]"
-ICON_USER      = "[ EMPL ]"
-ICON_LIST      = "[ LIST ]"
-ICON_CALENDAR  = "[ RESV ]"
-ICON_WRENCH    = "[ SERV ]"
-ICON_CHART     = "[ REPT ]"
-ICON_LOGOUT    = "[ SALIR ]"
+ICON_DASHBOARD = ""
+ICON_CAR       = ""
+ICON_USERS     = ""
+ICON_USER      = ""
+ICON_LIST      = ""
+ICON_CALENDAR  = ""
+ICON_WRENCH    = ""
+ICON_CHART     = ""
+ICON_LOGOUT    = ""
 
-# Símbolos simples estándar (ASCII/Unicode básico seguro)
-ICON_SEARCH    = "[ ? ]"
-ICON_EDIT      = "[ / ]"
-ICON_TRASH     = "[ X ]"
-ICON_CHECK     = "[ OK ]"
-ICON_PLUS      = "[ + ]"
-ICON_REFRESH   = "[ R ]"
+# Símbolos de acciones
+ICON_SEARCH    = ""
+ICON_EDIT      = ""
+ICON_TRASH     = ""
+ICON_CHECK     = ""
+ICON_PLUS      = ""
+ICON_REFRESH   = ""
 
 # Función dummy para compatibilidad
 def ensure_font_exists():

@@ -6,13 +6,13 @@ _VIEWS = {}
 
 def register_view(name: str, tag: str):
     """Registra una vista en el sistema de navegación."""
-    print(f"📂 [Navigation] Registrando vista: '{name}' -> Tag: '{tag}'")
+    print(f"[Navigation] Registrando vista: '{name}' -> Tag: '{tag}'")
     _VIEWS[name] = tag
 
 
 def go_to(name: str):
     """Navega a una vista. Muestra/oculta sidebar según la vista."""
-    print(f"🚀 [Navigation] Intentando ir a: '{name}'")
+    print(f"[Navigation] Intentando ir a: '{name}'")
     print(f"   - Vistas registradas actualmente: {list(_VIEWS.keys())}")
 
     # Mostrar sidebar solo si NO es login
@@ -27,7 +27,7 @@ def go_to(name: str):
         if dpg.does_item_exist(tag):
             if n == name:
                 # ES la vista destino: Mostrarla
-                print(f"   - ✅ MOSTRANDO: {n} ({tag})")
+                print(f"   - MOSTRANDO: {n} ({tag})")
                 dpg.configure_item(tag, show=True)
                 found_target = True
 
@@ -41,7 +41,7 @@ def go_to(name: str):
                     print(f"   - 🙈 OCULTANDO: {n} ({tag})")
                 dpg.configure_item(tag, show=False)
         else:
-            print(f"   - ⚠️ ADVERTENCIA: El tag '{tag}' registrado para '{n}' NO EXISTE en DearPyGui.")
+            print(f"   - ADVERTENCIA: El tag '{tag}' registrado para '{n}' NO EXISTE en DearPyGui.")
 
     if not found_target:
-        print(f"❌ [Navigation] ERROR: No se encontró la vista destino '{name}' o su tag no existe.")
+        print(f"[Navigation] ERROR: No se encontró la vista destino '{name}' o su tag no existe.")

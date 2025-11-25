@@ -2,6 +2,7 @@ import dearpygui.dearpygui as dpg
 from ui.theme import install_theme
 from ui.navigation import go_to
 from ui.icons import *  # Importar iconos
+from services.containers.container import Container
 
 # Importamos las vistas
 from ui.windows.home import register as register_home
@@ -110,9 +111,13 @@ def run_app():
 
     _build_layout()
 
+    # Crear container e inyectar dependencias
+    container = Container()
+    cliente_controller = container.cliente_controller()
+
     register_login()
     register_home()
-    register_clientes()
+    register_clientes(cliente_controller)
     register_vehiculos()
 
     dpg.configure_item("sidebar", show=False)

@@ -1,9 +1,7 @@
-from services.containers.container import Container
+from ui.app import run_app
 
 def main():
-    container = Container()
-    contrato_controller = container.contrato_controller()
-    print(contrato_controller.get_all_contratos())
+    run_app()
 
 
 if __name__ == "__main__":

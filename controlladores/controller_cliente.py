@@ -64,6 +64,42 @@ class ClienteController:
             print(f"Error creando cliente: {e}")
             return None
 
+    def update_cliente(self, cliente_id: int, data: Dict[str, Any]) -> bool:
+        """Actualiza un cliente existente."""
+        try:
+            # Obtener el cliente actual
+            cliente = self._service.get_cliente_by_id(cliente_id)
+            if not cliente:
+                print(f"Cliente con ID {cliente_id} no encontrado")
+                return False
+            
+            # Actualizar la persona asociada
+            persona = cliente.persona
+            if persona:
+                persona.nombre = data.get("Nombre", persona.nombre)
+                persona.apellido = data.get("Apellido", persona.apellido)
+                persona.telefono = data.get("Teléfono", persona.telefono)
+                persona.mail = data.get("Email", persona.mail)
+                persona.direccion = data.get("Dirección", persona.direccion)
+                
+                # Actualizar fecha si viene en el formato correcto
+                if data.get("Fecha Nacimiento"):
+                    try:
+                        persona.fecha_nacimiento = datetime.strptime(data.get("Fecha Nacimiento"), "%Y-%m-%d")
+                    except:
+                        pass  # Mantener fecha actual si hay error
+                
+                self._persona_service.update_persona(persona)
+            
+            # Actualizar datos del cliente
+            cliente.documento = data.get("Documento", cliente.documento)
+            cliente.id_tipo_documento = data.get("id_tipo_documento", cliente.id_tipo_documento)
+            
+            return self._service.update_cliente(cliente)
+        except Exception as e:
+            print(f"Error actualizando cliente: {e}")
+            return False
+
     def delete_cliente(self, cliente_id: int) -> bool:
         return self._service.delete_cliente(cliente_id)
 
