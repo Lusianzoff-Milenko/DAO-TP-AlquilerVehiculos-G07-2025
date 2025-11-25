@@ -24,6 +24,7 @@ class Contrato(Base):
         "DetalleContrato",  # <--- Correcto: Apunta a la clase DetalleContrato
         back_populates="contrato",  # <--- Correcto: Apunta al atributo 'contrato' en DetalleContrato
         cascade="all, delete-orphan",
+        uselist=True
     )
     Cliente = relationship("Cliente")
     MetodoDePago = relationship("MetodoDePago")

@@ -112,13 +112,15 @@ def main():
         tipo_puesto = TipoPuesto(nombre=tp)
         tipo_puesto_service.create_tipo_puesto(tipo_puesto)
 
-    #Crear Persona
-    personas = [("Juan", "Pérez", "12345678", "mailfalso@mail.com", "Calle Falsa 123", datetime(1990, 1, 1)),
-                ("María", "Gómez", "87654321", "mailfalso1@mail.com", "Avenida Siempre Viva 742", datetime(1985, 6, 15)),
-                ("Carlos", "López", "11223344", "mailfalso2@mail.com", "Boulevard de los Sueños Rotos 456", datetime(1978, 3, 22)),
-                ("Ana", "Martínez", "44332211", "mailfalso3@mail.com", "Plaza Mayor 789", datetime(1995, 12, 5)),
-                ("Luis", "Rodríguez", "55667788", "mailfalso4@mail.com", "Callejón del Beso 101", datetime(1988, 9, 30)),
-                ("Laura", "Fernández", "99887766", "mailfalso5@mail.com", "Camino Real 202", datetime(1992, 11, 11))]
+    personas = [
+        ("Juan", "Pérez", "12345678", "mailfalso@mail.com", "Calle Falsa 123", datetime(1990, 1, 1).date()),
+        ("María", "Gómez", "87654321", "mailfalso1@mail.com", "Avenida Siempre Viva 742", datetime(1985, 6, 15).date()),
+        ("Carlos", "López", "11223344", "mailfalso2@mail.com", "Boulevard de los Sueños Rotos 456",
+         datetime(1978, 3, 22).date()),
+        ("Ana", "Martínez", "44332211", "mailfalso3@mail.com", "Plaza Mayor 789", datetime(1995, 12, 5).date()),
+        ("Luis", "Rodríguez", "55667788", "mailfalso4@mail.com", "Callejón del Beso 101", datetime(1988, 9, 30).date()),
+        ("Laura", "Fernández", "99887766", "mailfalso5@mail.com", "Camino Real 202", datetime(1992, 11, 11).date())
+    ]
     for nombre, apellido, telefono, mail, direccion, fecha_nacimiento in personas:
         print(f"Creando persona: {nombre} {apellido} - Tel: {telefono}")
         persona = Persona(nombre=nombre, apellido=apellido, telefono=telefono, mail=mail, direccion=direccion, fecha_nacimiento=fecha_nacimiento)

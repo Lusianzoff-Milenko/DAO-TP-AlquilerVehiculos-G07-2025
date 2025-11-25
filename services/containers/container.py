@@ -32,6 +32,9 @@ from services import (
 from services.reporte_service import ReporteService
 
 from controlladores.controller_vehiculo import VehiculoController
+from controlladores.controller_cliente import ClienteController
+from controlladores.controlle_empleado import EmpleadoController
+from controlladores.controller_contrato import ContratoController
 
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
@@ -134,4 +137,27 @@ class Container(containers.DeclarativeContainer):
         vehiculo_service=vehiculo_service,
         modelo_service=modelo_service,
         color_service=color_service
+    )
+
+    cliente_controller = providers.Factory(
+        ClienteController,
+        cliente_service=cliente_service,
+        persona_service=persona_service,
+        tipo_doc_service=tipo_documento_service
+    )
+
+    empleado_controller = providers.Factory(
+        EmpleadoController,
+        empleado_service=empleado_service,
+        persona_service=persona_service,
+        tipo_puesto_service=tipo_puesto_service
+    )
+
+    contrato_controller = providers.Factory(
+        ContratoController,
+        contrato_service=contrato_service,
+        vehiculo_service=vehiculo_service,
+        cliente_service=cliente_service,
+        empleado_service=empleado_service,
+        pago_service=metodo_pago_service
     )
