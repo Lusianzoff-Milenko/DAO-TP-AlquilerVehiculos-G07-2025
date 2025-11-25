@@ -29,8 +29,6 @@ class ContratoController:
         for c in contratos:
             # Obtener patente del primer vehículo (simplificado para tabla)
             patente = "N/A"
-            for d in c.detalles_contrato:
-                print(d, "detalle contrato")
             if c.detalles_contrato and len(c.detalles_contrato) > 0:
                 # Lazy loading debe estar activo o usar joinedload en repo
                 v = c.detalles_contrato[0].Vehiculo

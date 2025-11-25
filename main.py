@@ -2,8 +2,8 @@ from services.containers.container import Container
 
 def main():
     container = Container()
-    contrato_controller = container.contrato_controller()
-    print(contrato_controller.get_all_contratos())
+    mantebimiento_controller = container.mantenimiento_controller()
+    print(mantebimiento_controller.get_all_mantenimientos())
 
 
 if __name__ == "__main__":
