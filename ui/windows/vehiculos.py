@@ -1,155 +1,107 @@
-# ui/windows/vehiculos.py
 import dearpygui.dearpygui as dpg
 from ui.navigation import register_view
-from ui.components.table_view import TableView
 from ui.components.form_dialog import FormDialog
 from ui.services.workers import run_async
 from services.containers.container import Container
 
 _TAG = "view_vehiculos"
-_container = Container()  # Instancia del contenedor (o usa una global si tienes una instancia única en app.py)
-_controller = _container.vehiculo_controller()  # Instanciamos el controller con sus dependencias
+_TABLE_TAG = "vehiculos_table_real"
 
+_container = Container()
+_controller = _container.vehiculo_controller()
 _form_dialog = None
-_options_cache = {}  # Para guardar modelos y colores para los combos
+_options_cache = {}
 
-def _on_error(e):
-    print(f"❌ ERROR cargando vehículos: {e}")
 
 def _load_data():
-    """Llama al controller en un hilo separado."""
-    print("🔄 Iniciando carga de datos...") # Debug visual
-    def task():
-        try:
-            datos = _controller.get_all_vehiculos()
-            print(f"✅ Datos recibidos en hilo ({len(datos)} registros)")
-            return datos
-        except Exception as e:
-            print(f"❌ Error en controller: {e}")
-            return []
-
-    # Importante: Pasamos una función lambda para asegurar que _update_table reciba los datos
-    run_async(task, on_success=lambda data: _update_table(data))
-
-
-def _update_table(data):
-    """Callback que corre en el hilo principal al terminar la carga."""
-    if _table_view:
-        print("🔄 Actualizando tabla en hilo principal")
-        print(_table_view)
-        _table_view.refresh(data)
+    run_async(lambda: _controller.get_all_vehiculos(), on_success=_refresh_table)
 
 
 def _load_options():
-    """Carga opciones para los combos (Modelos, Colores)."""
-
-    def task():
-        return _controller.get_form_options()
-
-    def on_success(opts):
-        global _options_cache
-        _options_cache = opts
-        # Aquí podríamos actualizar el diálogo si ya estuviera creado
-
-    run_async(task, on_success=on_success)
+    run_async(lambda: _controller.get_form_options(), on_success=lambda opts: _options_cache.update(opts))
 
 
-# --- Acciones de Botones ---
+def _refresh_table(data):
+    # Borrar filas anteriores
+    if dpg.does_item_exist(_TABLE_TAG):
+        dpg.delete_item(_TABLE_TAG, children_only=True)
 
-def _on_nuevo_click():
-    if _form_dialog:
-        # Preparamos las opciones para el combo
-        model_names = [m['label'] for m in _options_cache.get('modelos', [])]
-        color_names = [c['label'] for c in _options_cache.get('colores', [])]
-
-        # Actualizamos las opciones del dialogo dinámicamente (esto requiere soporte en tu FormDialog o reconstruirlo)
-        # Por simplicidad, asumimos que FormDialog puede recibir actualización o se reconstruye.
-        _form_dialog.show()
+    # Agregar filas nuevas
+    for row in data:
+        with dpg.table_row(parent=_TABLE_TAG):
+            dpg.add_text(str(row.get("ID", "")))
+            dpg.add_text(row.get("Patente", ""))
+            dpg.add_text(row.get("Marca", ""))
+            dpg.add_text(row.get("Modelo", ""))
+            dpg.add_text(row.get("Color", ""))
+            dpg.add_text(str(row.get("Año", "")))
+            dpg.add_text(f"${row.get('Precio', 0)}")
+            dpg.add_text(row.get("Estado", ""))
+            with dpg.group(horizontal=True):
+                dpg.add_button(label="Edit", callback=lambda s, a, r=row: _form_dialog.show(r))
+                dpg.add_button(label="Del", callback=lambda s, a, r=row: _on_eliminar(r))
 
 
 def _on_guardar(data):
-    """Data viene del FormDialog."""
+    # Mapeo inverso simplificado
+    mod_name = data.get("Modelo")
+    col_name = data.get("Color")
+    data['id_modelo'] = next((m['value'] for m in _options_cache.get('modelos', []) if m['label'] == mod_name), None)
+    data['id_color'] = next((c['value'] for c in _options_cache.get('colores', []) if c['label'] == col_name), None)
 
-    # Mapeo inverso de Nombre -> ID para el controller
-    # (Esto es necesario porque el Combo de DearPyGui devuelve strings, no objetos)
-    modelo_nombre = data.get("Modelo")
-    color_nombre = data.get("Color")
-
-    id_modelo = next((m['value'] for m in _options_cache['modelos'] if m['label'] == modelo_nombre), None)
-    id_color = next((c['value'] for c in _options_cache['colores'] if c['label'] == color_nombre), None)
-
-    data['id_modelo'] = id_modelo
-    data['id_color'] = id_color
-
-    def task():
-        if data.get("ID"):
-            return _controller.update_vehiculo(data)
-        else:
-            return _controller.create_vehiculo(data)
-
-    def on_done(result):
-        print(f"Operación resultado: {result}")
-        _load_data()  # Recargar tabla
-
-    run_async(task, on_success=on_done)
+    run_async(lambda: _controller.update_vehiculo(data) if data.get("ID") else _controller.create_vehiculo(data),
+              on_success=lambda x: _load_data())
 
 
 def _on_eliminar(row):
-    def task():
-        return _controller.delete_vehiculo(row["ID"])
-
-    run_async(task, on_success=lambda x: _load_data())
+    run_async(lambda: _controller.delete_vehiculo(row["ID"]), on_success=lambda x: _load_data())
 
 
 def register():
-    global _table_view, _form_dialog
+    global _form_dialog
 
-    # Registramos la vista primero para asegurar que el tag _TAG exista
-    with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1):
-        dpg.add_spacer(height=16)
+    # USAMOS GROUP (No child_window) para la vista, así se ajusta al content_area
+    with dpg.group(tag=_TAG, parent="content_area", show=False):
+        dpg.add_spacer(height=10)
         dpg.add_text("Gestión de Flota", color=(56, 117, 215))
         dpg.add_separator()
-        dpg.add_spacer(height=16)
+        dpg.add_spacer(height=10)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="+ Nuevo Vehículo", callback=_on_nuevo_click)
-            dpg.add_spacer(width=10)
-            # Botón de auxilio por si la carga automática falla
-            dpg.add_button(label="🔄 Recargar Tabla", callback=_load_data)
+            dpg.add_button(label="+ Nuevo Vehículo", callback=lambda: _form_dialog.show())
+            dpg.add_button(label="Recargar", callback=_load_data)
 
-        dpg.add_spacer(height=12)
+        dpg.add_spacer(height=10)
 
-        # 1. CREAMOS LA TABLA VISUALMENTE
-        _table_view = TableView(
-            tag="vehiculos_table_view",
-            columns=["ID", "Patente", "Marca", "Modelo", "Color", "Año", "Precio", "Estado"],
-            on_edit=lambda row: _form_dialog.show(row),
-            on_delete=_on_eliminar
-        )
-        _table_view.render(_TAG)
+        # Tabla directa
+        with dpg.table(tag=_TABLE_TAG, header_row=True, borders_innerH=True, row_background=True,
+                       policy=dpg.mvTable_SizingStretchProp, scrollY=True, height=-1):
+            dpg.add_table_column(label="ID", width_fixed=True)
+            dpg.add_table_column(label="Patente")
+            dpg.add_table_column(label="Marca")
+            dpg.add_table_column(label="Modelo")
+            dpg.add_table_column(label="Color")
+            dpg.add_table_column(label="Año")
+            dpg.add_table_column(label="Precio")
+            dpg.add_table_column(label="Estado")
+            dpg.add_table_column(label="Acciones", width_fixed=True)
 
-        # 2. CREAMOS EL FORMULARIO
-        _form_dialog = FormDialog(
-            tag="vehiculo_form",
-            title="Datos del Vehículo",
-            fields=[
-                {'key': 'ID', 'label': 'ID', 'type': 'number', 'required': False},
-                {'key': 'Patente', 'label': 'Patente', 'type': 'text', 'required': True},
-                {'key': 'Chasis', 'label': 'Nro Chasis', 'type': 'text', 'required': True},
-                {'key': 'Modelo', 'label': 'Modelo', 'type': 'combo', 'options': [], 'required': True},
-                {'key': 'Color', 'label': 'Color', 'type': 'combo', 'options': [], 'required': True},
-                {'key': 'Año', 'label': 'Año Fab.', 'type': 'number', 'default': 2024, 'required': True},
-                {'key': 'Precio', 'label': 'Precio Diario', 'type': 'float', 'required': True},
-            ],
-            on_submit=_on_guardar,
-            width=500,
-            height=500
-        )
+    # Formulario
+    _form_dialog = FormDialog(
+        tag="vehiculo_form",
+        title="Vehículo",
+        fields=[
+            {'key': 'ID', 'label': 'ID', 'type': 'number', 'required': False},
+            {'key': 'Patente', 'label': 'Patente', 'type': 'text', 'required': True},
+            {'key': 'Chasis', 'label': 'Chasis', 'type': 'text', 'required': True},
+            {'key': 'Modelo', 'label': 'Modelo', 'type': 'combo', 'options': [], 'required': True},
+            {'key': 'Color', 'label': 'Color', 'type': 'combo', 'options': [], 'required': True},
+            {'key': 'Año', 'label': 'Año', 'type': 'number', 'default': 2024, 'required': True},
+            {'key': 'Precio', 'label': 'Precio', 'type': 'float', 'required': True},
+        ],
+        on_submit=_on_guardar
+    )
 
-    # 3. REGISTRO EN SISTEMA DE NAVEGACIÓN
     register_view("vehiculos", _TAG)
-
-    # 4. CARGA DE DATOS (Al final de todo)
-    # Esto sigue ocurriendo al inicio del programa, pero ahora la tabla YA existe visualmente
     _load_data()
     _load_options()

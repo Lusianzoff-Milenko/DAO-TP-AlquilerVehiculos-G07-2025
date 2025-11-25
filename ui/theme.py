@@ -1,81 +1,77 @@
 # ui/theme.py
-import os
 import dearpygui.dearpygui as dpg
+import os
+import platform
 
-def _try_load_font():
-    fonts_dir = os.path.join(os.path.dirname(__file__), "assets")
-    font_path = os.path.join(fonts_dir, "Inter-Regular.ttf")  # cambiá si usás otra
-    if os.path.exists(font_path):
-        with dpg.font_registry():
-            font = dpg.add_font(font_path, 16)
-            dpg.bind_font(font)
+
+def _load_system_font():
+    """Intenta cargar una fuente del sistema para mejor calidad."""
+    # Registro de fuente
+    with dpg.font_registry():
+        # Intentamos buscar rutas comunes de fuentes en Windows/Linux
+        possible_paths = [
+            "C:/Windows/Fonts/segoeui.ttf",  # Windows moderna
+            "C:/Windows/Fonts/arial.ttf",  # Windows clásica
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+            "/System/Library/Fonts/Helvetica.ttc"  # Mac
+        ]
+
+        font_loaded = False
+        for path in possible_paths:
+            if os.path.exists(path):
+                # Tamaño 18 para que se vea nítido y legible
+                try:
+                    # Agregamos soporte para caracteres latinos y símbolos básicos
+                    with dpg.font(path, 20) as font_id:
+                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+                        dpg.add_font_range_hint(dpg.mvFontRangeHint_Japanese)
+
+                    dpg.bind_font(font_id)
+                    print(f"✅ Fuente cargada: {path}")
+                    font_loaded = True
+                    break
+                except Exception as e:
+                    print(f"⚠️ No se pudo cargar la fuente {path}: {e}")
+
+        if not font_loaded:
+            print("⚠️ Usando fuente por defecto (puede verse pixelada).")
+
 
 def _install_base_theme():
     with dpg.theme() as base_theme:
         with dpg.theme_component(dpg.mvAll):
+            # Estilo geométrico moderno
             dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 8, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 12, 10)
-            dpg.add_theme_style(dpg.mvStyleVar_CellPadding, 6, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 6)
+            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 8, 8)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 10, 10)
+
+            # Colores Generales (Gris Azulado Profundo)
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (30, 33, 38, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (36, 40, 46, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_Border, (60, 65, 75, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (40, 45, 55, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (56, 117, 215, 255))
+
+            # Textos
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (230, 235, 240, 255))
+
+            # Botones
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (50, 55, 65, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (60, 120, 200, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (50, 100, 180, 255))
+
+            # Headers de tablas
+            dpg.add_theme_color(dpg.mvThemeCol_Header, (50, 55, 65, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (70, 75, 85, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (90, 95, 105, 255))
+
     dpg.bind_theme(base_theme)
 
-def _apply_dark_palette():
-    with dpg.theme() as dark_theme:
-        with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (25, 27, 30, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (235, 235, 235, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_TextDisabled, (150, 150, 150, 255))
-            # Inputs / frames
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (45, 48, 52, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (65, 68, 72, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (75, 78, 82, 255))
-            # Botones
-            dpg.add_theme_color(dpg.mvThemeCol_Button, (56, 117, 215, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (66, 137, 235, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (52, 105, 200, 255))
-            # Tablas / headers
-            dpg.add_theme_color(dpg.mvThemeCol_Header, (52, 60, 70, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (70, 80, 92, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (80, 92, 104, 255))
-            # Bordes
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (70, 70, 70, 255))
-    dpg.bind_theme(dark_theme)
 
-def _apply_light_palette():
-    with dpg.theme() as light_theme:
-        with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (245, 246, 248, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (25, 27, 30, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_TextDisabled, (120, 120, 120, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (255, 255, 255, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (240, 242, 245, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (230, 232, 236, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Button, (56, 117, 215, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (66, 137, 235, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (52, 105, 200, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Header, (230, 232, 236, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, (210, 214, 220, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, (200, 205, 212, 255))
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (210, 210, 210, 255))
-    dpg.bind_theme(light_theme)
-
-# --- API pública ---
-_current_mode = {"dark": True}
-
-def install_theme(dark: bool = True):
-    """Llamala desde app.run_app()."""
-    _try_load_font()
+def install_theme():
+    _load_system_font()
     _install_base_theme()
-    if dark:
-        _apply_dark_palette()
-    else:
-        _apply_light_palette()
-    _current_mode["dark"] = dark
-
-def toggle_theme():
-    """Podés colgar esto a un botón de menú para alternar claro/oscuro."""
-    new_mode = not _current_mode["dark"]
-    install_theme(dark=new_mode)
