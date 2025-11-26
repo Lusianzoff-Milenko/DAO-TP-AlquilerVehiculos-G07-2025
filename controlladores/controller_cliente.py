@@ -31,7 +31,8 @@ class ClienteController:
                     "Tipo Doc": c.TipoDocumento.nombre if c.TipoDocumento else "S/D",
                     "Email": p.mail,
                     "Teléfono": p.telefono,
-                    "Dirección": p.direccion
+                    "Dirección": p.direccion,
+                    "Fecha Nacimiento": p.fecha_nacimiento.strftime("%Y-%m-%d") if p.fecha_nacimiento else "2000-01-01"
                 })
         return data
 

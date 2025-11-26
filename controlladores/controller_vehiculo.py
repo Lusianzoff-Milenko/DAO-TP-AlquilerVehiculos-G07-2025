@@ -89,7 +89,9 @@ class VehiculoController:
             # Actualizar relaciones
             vehiculo.id_modelo = int(data.get("id_modelo"))
             vehiculo.id_color = int(data.get("id_color"))
-            vehiculo.id_estado = int(data.get("id_estado"))
+            # Solo actualizar estado si viene en el data, sino mantener el actual
+            if "id_estado" in data and data["id_estado"] is not None:
+                vehiculo.id_estado = int(data["id_estado"])
 
             return self._service.update_vehiculo(vehiculo)
         except Exception as e:

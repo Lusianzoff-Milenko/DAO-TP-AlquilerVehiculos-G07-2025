@@ -73,7 +73,7 @@ def _on_editar_cliente(cliente: dict):
             "Email": cliente.get("Email", ""),
             "Teléfono": cliente.get("Teléfono", ""),
             "Dirección": cliente.get("Dirección", ""),
-            "Fecha Nacimiento": "2000-01-01"  # Placeholder - no tenemos fecha en el get_all
+            "Fecha Nacimiento": cliente.get("Fecha Nacimiento", "2000-01-01")
         }
         _form_dialog.show(data=form_data)
     except Exception as e:
@@ -126,6 +126,21 @@ def _on_guardar_cliente(data: dict):
     global _editing_cliente_id
     
     try:
+        # Validar fecha de nacimiento (debe ser mayor de 18 años)
+        from datetime import datetime, timedelta
+        fecha_nac_str = data.get('Fecha Nacimiento', '')
+        try:
+            fecha_nac = datetime.strptime(fecha_nac_str, "%Y-%m-%d")
+            hoy = datetime.now()
+            edad = (hoy - fecha_nac).days / 365.25
+            
+            if edad < 18:
+                _show_notification("Error: El cliente debe ser mayor de 18 años", error=True)
+                return
+        except ValueError:
+            _show_notification("Error: Formato de fecha inválido. Use YYYY-MM-DD", error=True)
+            return
+        
         # Mapear el índice del combo al ID real del tipo de documento
         tipo_doc_value = data.get('id_tipo_documento', '')
         if isinstance(tipo_doc_value, str):
@@ -179,7 +194,6 @@ def _refresh_table():
         # Crear una copia del cliente para evitar problemas con la lambda
         cliente_data = dict(cliente)
         with dpg.table_row(parent="clientes_table"):
-            dpg.add_text(str(cliente_data["ID"]))
             dpg.add_text(cliente_data["Nombre Completo"])
             dpg.add_text(cliente_data["Documento"])
             dpg.add_text(cliente_data["Email"])
@@ -266,7 +280,6 @@ def register(cliente_controller):
             height=500
         ):
             # Headers con anchos proporcionales
-            dpg.add_table_column(label="ID", init_width_or_weight=0.5)
             dpg.add_table_column(label="Nombre Completo", init_width_or_weight=2.0)
             dpg.add_table_column(label="Documento", init_width_or_weight=1.0)
             dpg.add_table_column(label="Email", init_width_or_weight=2.5)
@@ -279,7 +292,6 @@ def register(cliente_controller):
                 # Crear una copia del cliente para evitar problemas con la lambda
                 cliente_data = dict(cliente)
                 with dpg.table_row():
-                    dpg.add_text(str(cliente_data["ID"]))
                     dpg.add_text(cliente_data["Nombre Completo"])
                     dpg.add_text(cliente_data["Documento"])
                     dpg.add_text(cliente_data["Email"])
@@ -305,7 +317,7 @@ def register(cliente_controller):
                 {'key': 'Email', 'label': 'Email', 'type': 'text', 'default': '', 'required': True},
                 {'key': 'Teléfono', 'label': 'Teléfono', 'type': 'text', 'default': '', 'required': True},
                 {'key': 'Dirección', 'label': 'Dirección', 'type': 'text', 'default': '', 'required': True},
-                {'key': 'Fecha Nacimiento', 'label': 'Fecha Nacimiento (YYYY-MM-DD)', 'type': 'text', 'default': '2000-01-01', 'required': True}
+                {'key': 'Fecha Nacimiento', 'label': 'Fecha Nacimiento', 'type': 'text', 'default': '2000-01-01', 'required': True}
             ],
             on_submit=_on_guardar_cliente,
             width=600,

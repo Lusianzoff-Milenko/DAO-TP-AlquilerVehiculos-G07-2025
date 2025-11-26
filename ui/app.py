@@ -36,11 +36,11 @@ def _build_layout():
         with dpg.group(tag="main_layout", horizontal=True):
             # --- SIDEBAR ---
             with dpg.child_window(tag="sidebar", width=SIDEBAR_WIDTH, height=-1, border=False):
-                dpg.add_spacer(height=10)
+                dpg.add_spacer(height=8)
 
                 # Grupo de Navegación
                 dpg.add_text("   PRINCIPAL", color=(100, 100, 100))
-                dpg.add_spacer(height=5)
+                dpg.add_spacer(height=3)
 
                 _add_menu_btn(f"{ICON_DASHBOARD}  Dashboard", "home")
                 _add_menu_btn(f"{ICON_USERS}  Clientes", "clientes")
@@ -48,18 +48,17 @@ def _build_layout():
                 _add_menu_btn(f"{ICON_USER}  Empleados", "empleados")
                 _add_menu_btn(f"{ICON_CHART}  Reportes", "reportes")
 
-                dpg.add_spacer(height=20)
+                dpg.add_spacer(height=10)
                 dpg.add_text("   GESTIÓN", color=(100, 100, 100))
-                dpg.add_spacer(height=5)
+                dpg.add_spacer(height=3)
 
                 _add_menu_btn(f"{ICON_LIST}  Alquileres", "alquileres")
                 _add_menu_btn(f"{ICON_CALENDAR}  Reservas", "reservas")
                 _add_menu_btn(f"{ICON_WRENCH}  Mantenimiento", "mantenimiento")
-                _add_menu_btn(f"{ICON_CHART}  Reportes", "reportes")
 
-                dpg.add_spacer(height=40)
-                dpg.add_separator()
                 dpg.add_spacer(height=10)
+                dpg.add_separator()
+                dpg.add_spacer(height=8)
 
                 _add_menu_btn(f"{ICON_LOGOUT}  Salir", "login", is_logout=True)
 
@@ -90,7 +89,7 @@ def _add_menu_btn(label, view_name, is_logout=False):
 
     # width=-1 hace que el botón se estire horizontalmente
     # alignment=0.0 alinea el texto a la izquierda (típico de menús)
-    btn = dpg.add_button(label=f"  {label}", width=-1, height=35, callback=_cb)
+    btn = dpg.add_button(label=f"  {label}", width=-1, height=32, callback=_cb)
 
     # Ajustar alineación del texto a la izquierda (hack de tema)
     with dpg.theme() as align_theme:
@@ -101,7 +100,7 @@ def _add_menu_btn(label, view_name, is_logout=False):
                 dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (130, 40, 40, 255))
 
     dpg.bind_item_theme(btn, align_theme)
-    dpg.add_spacer(height=2)
+    dpg.add_spacer(height=1)
 
 
 def run_app():

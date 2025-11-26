@@ -82,7 +82,6 @@ def _refresh_table():
         }
         
         with dpg.table_row(parent=_TABLE_TAG):
-            dpg.add_text(str(v_id))
             dpg.add_text(v_patente)
             dpg.add_text(v_marca_modelo)
             dpg.add_text(v_color)
@@ -186,9 +185,14 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
     # Validar campos requeridos
     patente = dpg.get_value("form_vehiculo_patente")
     chasis = dpg.get_value("form_vehiculo_chasis")
+    precio = float(dpg.get_value("form_vehiculo_precio"))
     
     if not patente or not chasis:
         _show_error_message("Error: Patente y Chasis son obligatorios")
+        return
+    
+    if precio < 0:
+        _show_error_message("Error: El precio diario no puede ser negativo")
         return
     
     # Recopilar datos del formulario
@@ -196,7 +200,7 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
         "Patente": patente,
         "Chasis": chasis,
         "Año": int(dpg.get_value("form_vehiculo_anio")),
-        "Precio": float(dpg.get_value("form_vehiculo_precio")),
+        "Precio": precio,
     }
     
     # Mapear nombres de combo a IDs
@@ -217,18 +221,9 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
             data["id_color"] = color["value"]
             break
     
-    # Solo mapear estado si estamos editando (el combo existe)
-    if _editing_vehiculo_id and dpg.does_item_exist("form_vehiculo_estado"):
-        estado_nombre = dpg.get_value("form_vehiculo_estado")
-        if not estado_nombre:
-            _show_error_message("Error: Debe seleccionar un Estado")
-            return
-        for estado in _estados_options:
-            if estado["label"] == estado_nombre:
-                data["id_estado"] = estado["value"]
-                break
-    else:
-        # Al crear, siempre usar estado "Disponible" (ID 1)
+    # Al crear, siempre usar estado "Disponible" (ID 1)
+    # Al actualizar, no incluir id_estado para mantener el estado actual
+    if not _editing_vehiculo_id:
         data["id_estado"] = 1
     
     try:
@@ -289,7 +284,7 @@ def _show_formulario(data=None):
         tag="ventana_form_vehiculo",
         modal=False,
         width=450,
-        height=550 if is_edit else 500,
+        height=500,
         no_resize=True,
         pos=[450, 100],
         on_close=lambda: dpg.delete_item("ventana_form_vehiculo")
@@ -336,7 +331,9 @@ def _show_formulario(data=None):
             tag="form_vehiculo_precio",
             default_value=float(data.get("Precio", 0.0)) if data else 0.0,
             width=200,
-            format="%.2f"
+            format="%.2f",
+            min_value=0.0,
+            min_clamped=True
         )
         
         dpg.add_spacer(height=10)
@@ -380,11 +377,6 @@ def register(vehiculo_controller):
                 width=150,
                 callback=lambda: _on_nuevo_vehiculo()
             )
-            dpg.add_button(
-                label="Actualizar",
-                width=100,
-                callback=lambda: _refresh_table()
-            )
             dpg.add_spacer(width=12)
             dpg.add_text("Total: 0 vehículos", tag="total_vehiculos")
         
@@ -404,7 +396,6 @@ def register(vehiculo_controller):
             scrollY=True,
             height=500
         ):
-            dpg.add_table_column(label="ID", init_width_or_weight=0.5)
             dpg.add_table_column(label="Patente", init_width_or_weight=1.0)
             dpg.add_table_column(label="Marca/Modelo", init_width_or_weight=2.5)
             dpg.add_table_column(label="Color", init_width_or_weight=1.0)
@@ -454,7 +445,6 @@ def register(vehiculo_controller):
                     }
                     
                     with dpg.table_row():
-                        dpg.add_text(str(v_id))
                         dpg.add_text(v_patente)
                         dpg.add_text(v_marca_modelo)
                         dpg.add_text(v_color)
