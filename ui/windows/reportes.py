@@ -2,6 +2,7 @@ import dearpygui.dearpygui as dpg
 from ui.navigation import register_view
 from ui.services.workers import run_async
 from services.containers.container import Container
+from typing import List, Dict, Any
 
 _TAG = "view_reportes"
 _controller = Container().reporte_controller()
@@ -13,7 +14,11 @@ def _update_table(table_tag, data):
     """Limpia y rellena una tabla con una lista de diccionarios."""
     # 1. Limpiar filas antiguas
     if dpg.does_item_exist(table_tag):
-        dpg.delete_item(table_tag, children_only=True)
+        # Usamos slot 1 para las filas
+        children = dpg.get_item_children(table_tag, slot=1)
+        if children:
+            for child in children:
+                dpg.delete_item(child)
 
     if not data:
         return
@@ -24,6 +29,57 @@ def _update_table(table_tag, data):
         with dpg.table_row(parent=table_tag):
             for value in row.values():
                 dpg.add_text(str(value))
+
+
+# --- Callbacks para Manejo de Datos (incluyendo gráfico) ---
+
+def _aggregate_utilizacion_by_model(data: List[Dict[str, Any]]) -> tuple[List[str], List[float]]:
+    """Agrega los días alquilados por Modelo (simplificado)."""
+    model_days = {}
+    for item in data:
+        model = item['Modelo']
+        days = float(item['Días Alquilado'])
+        model_days[model] = model_days.get(model, 0) + days
+
+    # Convertir a listas para el DPG: labels (x) y values (y)
+    labels = list(model_days.keys())
+    values = list(model_days.values())
+
+    # Ordenar por valores de mayor a menor (Top N)
+    sorted_pairs = sorted(zip(labels, values), key=lambda x: x[1], reverse=True)
+
+    # Tomar los top 5
+    top_n = 5
+    top_labels = [p[0] for p in sorted_pairs[:top_n]]
+    top_values = [p[1] for p in sorted_pairs[:top_n]]
+
+    return top_labels, top_values
+
+
+def _on_utilizacion_loaded(result):
+    """Callback para Utilización: actualiza tabla y gráfico."""
+    _update_table("tbl_utilizacion", result)
+
+    # Lógica de Gráfico
+    model_labels, days_values = _aggregate_utilizacion_by_model(result)
+
+    # Crear o actualizar series del gráfico
+    # Necesitamos convertir los labels a índices numéricos para el gráfico de barras
+    x_data = [i for i in range(len(model_labels))]
+
+    if dpg.does_item_exist("utilizacion_bar_series"):  # Debe existir, se crea en register()
+        dpg.set_value("utilizacion_bar_series", [x_data, days_values])
+
+        # Actualizar etiquetas del eje X
+        dpg.configure_item("utilizacion_x_axis", label="Modelo de Vehículo (Top 5)")
+
+        # Hack para configurar ticks del eje X con texto
+        ticks = [(i, label) for i, label in enumerate(model_labels)]
+        dpg.set_axis_ticks("utilizacion_x_axis", ticks)
+
+        # Forzar límites para que el gráfico sea visible
+        dpg.set_axis_limits("utilizacion_x_axis", -0.5, len(model_labels) - 0.5)
+        dpg.set_axis_limits_auto("utilizacion_y_axis")
 
 
 def _on_facturacion_loaded(result):
@@ -46,8 +102,9 @@ def _load_rentabilidad():
 
 
 def _load_utilizacion():
+    # Usar el nuevo callback
     run_async(lambda: _controller.get_utilizacion_flota(),
-              on_success=lambda data: _update_table("tbl_utilizacion", data))
+              on_success=_on_utilizacion_loaded)
 
 
 def _load_facturacion():
@@ -70,7 +127,7 @@ def register():
         dpg.add_spacer(height=10)
 
         with dpg.tab_bar():
-            # TAB 1: Disponibilidad de Flota
+            # TAB 1: Disponibilidad de Flota (Remover ID)
             with dpg.tab(label="🚗 Disponibilidad"):
                 dpg.add_spacer(height=5)
                 dpg.add_button(label="🔄 Actualizar", callback=_load_disponibilidad)
@@ -79,13 +136,13 @@ def register():
                 with dpg.table(tag="tbl_disponibilidad", header_row=True, borders_innerH=True,
                                row_background=True, scrollY=True, height=500,
                                policy=dpg.mvTable_SizingStretchProp):
-                    dpg.add_table_column(label="ID", width_fixed=True)
+                    # dpg.add_table_column(label="ID", width_fixed=True)
                     dpg.add_table_column(label="Vehículo")
                     dpg.add_table_column(label="Patente")
                     dpg.add_table_column(label="Precio Diario")
                     dpg.add_table_column(label="Estado")
 
-            # TAB 2: Rentabilidad de Contratos
+            # TAB 2: Rentabilidad de Contratos (Ajustar ancho de ID)
             with dpg.tab(label="💰 Rentabilidad"):
                 dpg.add_spacer(height=5)
                 dpg.add_button(label="🔄 Actualizar", callback=_load_rentabilidad)
@@ -94,7 +151,7 @@ def register():
                 with dpg.table(tag="tbl_rentabilidad", header_row=True, borders_innerH=True,
                                row_background=True, scrollY=True, height=500,
                                policy=dpg.mvTable_SizingStretchProp):
-                    dpg.add_table_column(label="Contrato #", width_fixed=True)
+                    dpg.add_table_column(label="Contrato #", width_fixed=True, init_width_or_weight=0.5)
                     dpg.add_table_column(label="Cliente")
                     dpg.add_table_column(label="Vehículo")
                     dpg.add_table_column(label="Estado")
@@ -102,14 +159,38 @@ def register():
                     dpg.add_table_column(label="Extras/Multas")
                     dpg.add_table_column(label="Total Final")
 
-            # TAB 3: Utilización
+            # TAB 3: Utilización (Añadir gráfico)
             with dpg.tab(label="📈 Utilización"):
                 dpg.add_spacer(height=5)
                 dpg.add_button(label="🔄 Actualizar", callback=_load_utilizacion)
                 dpg.add_spacer(height=5)
 
+                # --- GRÁFICO DE UTILIZACIÓN ---
+                with dpg.group(horizontal=True):
+                    # Placeholder para el gráfico (50% ancho)
+                    with dpg.plot(label="Uso de Flota (Días Alquilados por Modelo)", height=400, width=500,
+                                  tag="utilizacion_plot"):
+                        dpg.add_plot_legend()
+
+                        # Eje X
+                        dpg.add_plot_axis(dpg.mvXAxis, label="Modelo de Vehículo", tag="utilizacion_x_axis")
+
+                        # Eje Y
+                        # FIX: No usar 'with' aquí, ya que add_plot_axis retorna un tag (str), no un context manager
+                        dpg.add_plot_axis(dpg.mvYAxis, label="Total Días Alquilados", tag="utilizacion_y_axis")
+
+                        # Serie de Barras (inicialmente vacía) - Usamos parent explícito
+                        dpg.add_bar_series([], [], label="Días Alquilados", weight=0.5, tag="utilizacion_bar_series",
+                                           parent="utilizacion_y_axis")
+
+                dpg.add_spacer(height=10)
+                dpg.add_separator()
+                dpg.add_text("Detalle por Vehículo:")
+                dpg.add_spacer(height=5)
+
+                # Tabla de Utilización (Detalle)
                 with dpg.table(tag="tbl_utilizacion", header_row=True, borders_innerH=True,
-                               row_background=True, scrollY=True, height=500,
+                               row_background=True, scrollY=True, height=300,  # Reducir altura por el gráfico
                                policy=dpg.mvTable_SizingStretchProp):
                     dpg.add_table_column(label="Patente")
                     dpg.add_table_column(label="Modelo")
@@ -117,7 +198,7 @@ def register():
                     dpg.add_table_column(label="Días Alquilado")
                     dpg.add_table_column(label="Estado Actual")
 
-            # TAB 4: Facturación Cerrada
+            # TAB 4: Facturación Cerrada (Ajustar ancho de ID)
             with dpg.tab(label="💵 Facturación"):
                 dpg.add_spacer(height=5)
                 with dpg.group(horizontal=True):
@@ -130,13 +211,13 @@ def register():
                 with dpg.table(tag="tbl_facturacion", header_row=True, borders_innerH=True,
                                row_background=True, scrollY=True, height=500,
                                policy=dpg.mvTable_SizingStretchProp):
-                    dpg.add_table_column(label="Contrato #", width_fixed=True)
+                    dpg.add_table_column(label="Contrato #", width_fixed=True, init_width_or_weight=0.5)
                     dpg.add_table_column(label="Cliente")
                     dpg.add_table_column(label="Fecha Fin")
                     dpg.add_table_column(label="Días")
                     dpg.add_table_column(label="Facturado")
 
-            # TAB 5: Directorio Clientes
+            # TAB 5: Directorio Clientes (Remover ID)
             with dpg.tab(label="👥 Contactos"):
                 dpg.add_spacer(height=5)
                 dpg.add_button(label="🔄 Actualizar", callback=_load_clientes)
@@ -145,7 +226,7 @@ def register():
                 with dpg.table(tag="tbl_clientes_report", header_row=True, borders_innerH=True,
                                row_background=True, scrollY=True, height=500,
                                policy=dpg.mvTable_SizingStretchProp):
-                    dpg.add_table_column(label="ID", width_fixed=True)
+                    # dpg.add_table_column(label="ID", width_fixed=True)
                     dpg.add_table_column(label="Nombre")
                     dpg.add_table_column(label="Apellido")
                     dpg.add_table_column(label="Documento")
@@ -156,3 +237,6 @@ def register():
     # Carga inicial de datos
     _load_disponibilidad()
     _load_rentabilidad()
+    _load_utilizacion()
+    _load_clientes()
+    _load_facturacion()

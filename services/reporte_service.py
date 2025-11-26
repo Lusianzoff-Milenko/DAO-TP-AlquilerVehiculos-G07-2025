@@ -28,7 +28,8 @@ class ReporteService:
         # Convertimos a dict para fácil consumo en UI (tablas)
         return [
             {
-                "ID": c.id_cliente, "Nombre": c.nombre, "Apellido": c.apellido,
+                "Nombre": c.nombre,
+                "Apellido": c.apellido,
                 "Documento": f"{c.tipo_documento} {c.documento}",
                 "Contacto": f"{c.mail} | {c.telefono}"
             }
@@ -41,8 +42,9 @@ class ReporteService:
         data = self._disponibilidad.list_all()
         return [
             {
-                "ID": v.id_vehiculo, "Vehículo": f"{v.marca} {v.modelo}",
-                "Patente": v.patente, "Precio Diario": f"${v.precio_base}",
+                "Vehículo": f"{v.marca} {v.modelo}",
+                "Patente": v.patente,
+                "Precio Diario": f"${v.precio_base}",
                 "Estado": v.estado_actual
             }
             for v in data
