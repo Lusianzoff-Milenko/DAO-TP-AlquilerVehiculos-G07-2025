@@ -68,8 +68,8 @@ class VehiculoController:
 
             return self._service.create_vehiculo(nuevo_vehiculo)
         except Exception as e:
-            print(f"Error en controller creando vehículo: {e}")
-            raise e
+            print(f"Error creando vehículo (Patente/Chasis duplicado o Modelo inválido): {e}")
+            return None
 
     def update_vehiculo(self, vehiculo_id: int, data: Dict[str, Any]) -> bool:
         """

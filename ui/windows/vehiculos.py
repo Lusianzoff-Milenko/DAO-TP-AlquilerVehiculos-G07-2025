@@ -35,9 +35,6 @@ def _get_filtered_data():
 
 def _refresh_table():
     """Recarga la tabla desde la base de datos."""
-    if dpg.does_item_exist(_TABLE_TAG):
-        dpg.delete_item(_TABLE_TAG, children_only=True)
-    
     vehiculos = _get_filtered_data()
     print(f"[Vehiculos] Recargando {len(vehiculos)} vehículos en la tabla")
     
@@ -45,39 +42,106 @@ def _refresh_table():
     if dpg.does_item_exist("total_vehiculos"):
         dpg.set_value("total_vehiculos", f"Total: {len(vehiculos)} vehículos")
     
+    # Eliminar filas existentes (slot 1 contiene las filas)
+    if dpg.does_item_exist(_TABLE_TAG):
+        children = dpg.get_item_children(_TABLE_TAG, slot=1)
+        if children:
+            for child in children:
+                dpg.delete_item(child)
+    
+    # Agregar las filas actualizadas
     for vehiculo in vehiculos:
-        vehiculo_data = dict(vehiculo)
+        # Crear una copia inmutable para el callback
+        v_id = vehiculo.get("ID")
+        v_patente = vehiculo.get("Patente", "")
+        v_marca_modelo = vehiculo.get("Marca/Modelo", "")
+        v_color = vehiculo.get("Color", "")
+        v_anio = vehiculo.get("Año", "")
+        v_estado = vehiculo.get("Estado", "")
+        v_precio = vehiculo.get("Precio Diario", "")
+        v_chasis = vehiculo.get("Chasis", "")
+        v_precio_num = vehiculo.get("Precio", 0.0)
+        v_id_modelo = vehiculo.get("id_modelo")
+        v_id_color = vehiculo.get("id_color")
+        v_id_estado = vehiculo.get("id_estado")
+        
+        # Crear diccionario completo para callbacks
+        vehiculo_data = {
+            "ID": v_id,
+            "Patente": v_patente,
+            "Marca/Modelo": v_marca_modelo,
+            "Color": v_color,
+            "Año": v_anio,
+            "Estado": v_estado,
+            "Precio Diario": v_precio,
+            "Chasis": v_chasis,
+            "Precio": v_precio_num,
+            "id_modelo": v_id_modelo,
+            "id_color": v_id_color,
+            "id_estado": v_id_estado
+        }
+        
         with dpg.table_row(parent=_TABLE_TAG):
-            dpg.add_text(str(vehiculo_data.get("ID", "")))
-            dpg.add_text(vehiculo_data.get("Patente", ""))
-            dpg.add_text(vehiculo_data.get("Marca/Modelo", ""))
-            dpg.add_text(vehiculo_data.get("Color", ""))
-            dpg.add_text(str(vehiculo_data.get("Año", "")))
-            dpg.add_text(vehiculo_data.get("Estado", ""))
-            dpg.add_text(vehiculo_data.get("Precio Diario", ""))
+            dpg.add_text(str(v_id))
+            dpg.add_text(v_patente)
+            dpg.add_text(v_marca_modelo)
+            dpg.add_text(v_color)
+            dpg.add_text(str(v_anio))
+            dpg.add_text(v_estado)
+            dpg.add_text(v_precio)
             
             with dpg.group(horizontal=True):
                 dpg.add_button(
                     label="Editar",
-                    callback=lambda s, a, v=vehiculo_data: _on_editar_vehiculo(v),
-                    width=70
+                    callback=lambda s, a, u=vehiculo_data: _on_editar_vehiculo(u),
+                    width=70,
+                    user_data=vehiculo_data
                 )
                 dpg.add_button(
                     label="Eliminar",
-                    callback=lambda s, a, v=vehiculo_data: _on_eliminar_vehiculo(v),
-                    width=70
+                    callback=lambda s, a, u=vehiculo_data: _on_eliminar_vehiculo(u),
+                    width=70,
+                    user_data=vehiculo_data
                 )
+
+
+def _show_error_message(message):
+    """Muestra un mensaje de error en una ventana modal."""
+    if dpg.does_item_exist("error_window"):
+        dpg.delete_item("error_window")
+    
+    with dpg.window(
+        label="Error",
+        tag="error_window",
+        modal=True,
+        width=400,
+        height=150,
+        no_resize=True,
+        pos=[440, 300]
+    ):
+        dpg.add_text(message, color=(255, 100, 100))
+        dpg.add_spacer(height=20)
+        dpg.add_button(
+            label="Aceptar",
+            callback=lambda: dpg.delete_item("error_window"),
+            width=-1
+        )
 
 
 def _on_nuevo_vehiculo():
     """Abre el formulario para crear un nuevo vehículo."""
     global _editing_vehiculo_id
     _editing_vehiculo_id = None
+    print("[Vehiculos] Abriendo formulario para nuevo vehículo")
     _show_formulario()
 
 
 def _on_editar_vehiculo(vehiculo):
     """Abre el formulario para editar un vehículo existente."""
+    if not vehiculo:
+        print("[Vehiculos] Error: vehiculo es None")
+        return
+    
     global _editing_vehiculo_id
     _editing_vehiculo_id = vehiculo["ID"]
     
@@ -119,10 +183,18 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
     """Guarda un vehículo (crear o actualizar)."""
     global _editing_vehiculo_id
     
+    # Validar campos requeridos
+    patente = dpg.get_value("form_vehiculo_patente")
+    chasis = dpg.get_value("form_vehiculo_chasis")
+    
+    if not patente or not chasis:
+        _show_error_message("Error: Patente y Chasis son obligatorios")
+        return
+    
     # Recopilar datos del formulario
     data = {
-        "Patente": dpg.get_value("form_vehiculo_patente"),
-        "Chasis": dpg.get_value("form_vehiculo_chasis"),
+        "Patente": patente,
+        "Chasis": chasis,
         "Año": int(dpg.get_value("form_vehiculo_anio")),
         "Precio": float(dpg.get_value("form_vehiculo_precio")),
     }
@@ -130,7 +202,10 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
     # Mapear nombres de combo a IDs
     modelo_nombre = dpg.get_value("form_vehiculo_modelo")
     color_nombre = dpg.get_value("form_vehiculo_color")
-    estado_nombre = dpg.get_value("form_vehiculo_estado")
+    
+    if not modelo_nombre or not color_nombre:
+        _show_error_message("Error: Debe seleccionar Modelo y Color")
+        return
     
     for modelo in _modelos_options:
         if modelo["label"] == modelo_nombre:
@@ -142,10 +217,19 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
             data["id_color"] = color["value"]
             break
     
-    for estado in _estados_options:
-        if estado["label"] == estado_nombre:
-            data["id_estado"] = estado["value"]
-            break
+    # Solo mapear estado si estamos editando (el combo existe)
+    if _editing_vehiculo_id and dpg.does_item_exist("form_vehiculo_estado"):
+        estado_nombre = dpg.get_value("form_vehiculo_estado")
+        if not estado_nombre:
+            _show_error_message("Error: Debe seleccionar un Estado")
+            return
+        for estado in _estados_options:
+            if estado["label"] == estado_nombre:
+                data["id_estado"] = estado["value"]
+                break
+    else:
+        # Al crear, siempre usar estado "Disponible" (ID 1)
+        data["id_estado"] = 1
     
     try:
         if _editing_vehiculo_id:
@@ -153,23 +237,31 @@ def _on_guardar_vehiculo(sender, app_data, user_data):
             success = _vehiculo_controller.update_vehiculo(_editing_vehiculo_id, data)
             if success:
                 print(f"Vehículo {_editing_vehiculo_id} actualizado exitosamente")
+                _editing_vehiculo_id = None
+                # Cerrar formulario
+                if dpg.does_item_exist("ventana_form_vehiculo"):
+                    dpg.delete_item("ventana_form_vehiculo")
+                # Refrescar tabla después de cerrar
+                _refresh_table()
             else:
-                print(f"Error al actualizar vehículo {_editing_vehiculo_id}")
+                _show_error_message("Error al actualizar vehículo. Verifique que Patente/Chasis no estén duplicados.")
         else:
             # Crear nuevo vehículo
             vehiculo_id = _vehiculo_controller.create_vehiculo(data)
             if vehiculo_id:
                 print(f"Vehículo creado con ID: {vehiculo_id}")
+                _editing_vehiculo_id = None
+                # Cerrar formulario
+                if dpg.does_item_exist("ventana_form_vehiculo"):
+                    dpg.delete_item("ventana_form_vehiculo")
+                # Refrescar tabla después de cerrar
+                _refresh_table()
             else:
-                print("Error al crear vehículo")
-        
-        # Cerrar formulario y refrescar tabla
-        dpg.delete_item("ventana_form_vehiculo")
-        _refresh_table()
-        _editing_vehiculo_id = None
+                _show_error_message("Error al crear vehículo. La Patente o el Chasis ya existen en la base de datos.")
         
     except Exception as e:
         print(f"Error al guardar vehículo: {e}")
+        _show_error_message(f"Error inesperado: {str(e)}")
 
 
 def _on_eliminar_vehiculo(vehiculo):
@@ -190,14 +282,17 @@ def _show_formulario(data=None):
     if dpg.does_item_exist("ventana_form_vehiculo"):
         dpg.delete_item("ventana_form_vehiculo")
     
+    is_edit = data is not None
+    
     with dpg.window(
-        label="Nuevo Vehículo" if not data else "Editar Vehículo",
+        label="Nuevo Vehículo" if not is_edit else "Editar Vehículo",
         tag="ventana_form_vehiculo",
-        modal=True,
-        width=400,
-        height=500,
+        modal=False,
+        width=450,
+        height=550 if is_edit else 500,
         no_resize=True,
-        pos=[400, 150]
+        pos=[450, 100],
+        on_close=lambda: dpg.delete_item("ventana_form_vehiculo")
     ):
         dpg.add_input_text(
             label="Patente",
@@ -226,14 +321,6 @@ def _show_formulario(data=None):
             tag="form_vehiculo_color",
             items=[c["label"] for c in _colores_options],
             default_value=data.get("Color", "") if data else "",
-            width=200
-        )
-        
-        dpg.add_combo(
-            label="Estado",
-            tag="form_vehiculo_estado",
-            items=[e["label"] for e in _estados_options],
-            default_value=data.get("Estado", "") if data else "",
             width=200
         )
         
@@ -279,7 +366,7 @@ def register(vehiculo_controller):
     _colores_options = options.get("colores", [])
     _estados_options = options.get("estados", [])
     
-    with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1):
+    with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1, border=False):
         dpg.add_spacer(height=16)
         
         dpg.add_text("Gestión de Flota", color=(56, 117, 215))
@@ -299,12 +386,11 @@ def register(vehiculo_controller):
                 callback=lambda: _refresh_table()
             )
             dpg.add_spacer(width=12)
-            vehiculos_count = len(_get_filtered_data())
-            dpg.add_text(f"Total: {vehiculos_count} vehículos", tag="total_vehiculos")
+            dpg.add_text("Total: 0 vehículos", tag="total_vehiculos")
         
         dpg.add_spacer(height=12)
         
-        # Tabla de vehículos
+        # Tabla de vehículos (crear vacía)
         with dpg.table(
             tag=_TABLE_TAG,
             header_row=True,
@@ -327,30 +413,69 @@ def register(vehiculo_controller):
             dpg.add_table_column(label="Precio Diario", init_width_or_weight=1.2)
             dpg.add_table_column(label="Acciones", width_fixed=True, init_width_or_weight=150)
             
-            # Cargar datos directamente
-            vehiculos = _get_filtered_data()
-            print(f"[Vehiculos] Cargando {len(vehiculos)} vehículos en la tabla")
-            for vehiculo in vehiculos:
-                vehiculo_data = dict(vehiculo)
-                with dpg.table_row():
-                    dpg.add_text(str(vehiculo_data.get("ID", "")))
-                    dpg.add_text(vehiculo_data.get("Patente", ""))
-                    dpg.add_text(vehiculo_data.get("Marca/Modelo", ""))
-                    dpg.add_text(vehiculo_data.get("Color", ""))
-                    dpg.add_text(str(vehiculo_data.get("Año", "")))
-                    dpg.add_text(vehiculo_data.get("Estado", ""))
-                    dpg.add_text(vehiculo_data.get("Precio Diario", ""))
+            # Cargar datos iniciales directamente en la tabla
+            try:
+                vehiculos = _vehiculo_controller.get_all_vehiculos()
+                print(f"[Vehiculos] Cargando {len(vehiculos)} vehículos en la tabla")
+                
+                # Actualizar contador
+                if dpg.does_item_exist("total_vehiculos"):
+                    dpg.set_value("total_vehiculos", f"Total: {len(vehiculos)} vehículos")
+                
+                for vehiculo in vehiculos:
+                    # Crear una copia inmutable para el callback
+                    v_id = vehiculo.get("ID")
+                    v_patente = vehiculo.get("Patente", "")
+                    v_marca_modelo = vehiculo.get("Marca/Modelo", "")
+                    v_color = vehiculo.get("Color", "")
+                    v_anio = vehiculo.get("Año", "")
+                    v_estado = vehiculo.get("Estado", "")
+                    v_precio = vehiculo.get("Precio Diario", "")
+                    v_chasis = vehiculo.get("Chasis", "")
+                    v_precio_num = vehiculo.get("Precio", 0.0)
+                    v_id_modelo = vehiculo.get("id_modelo")
+                    v_id_color = vehiculo.get("id_color")
+                    v_id_estado = vehiculo.get("id_estado")
                     
-                    with dpg.group(horizontal=True):
-                        dpg.add_button(
-                            label="Editar",
-                            callback=lambda s, a, v=vehiculo_data: _on_editar_vehiculo(v),
-                            width=70
-                        )
-                        dpg.add_button(
-                            label="Eliminar",
-                            callback=lambda s, a, v=vehiculo_data: _on_eliminar_vehiculo(v),
-                            width=70
-                        )
+                    # Crear diccionario completo para callbacks
+                    vehiculo_data = {
+                        "ID": v_id,
+                        "Patente": v_patente,
+                        "Marca/Modelo": v_marca_modelo,
+                        "Color": v_color,
+                        "Año": v_anio,
+                        "Estado": v_estado,
+                        "Precio Diario": v_precio,
+                        "Chasis": v_chasis,
+                        "Precio": v_precio_num,
+                        "id_modelo": v_id_modelo,
+                        "id_color": v_id_color,
+                        "id_estado": v_id_estado
+                    }
+                    
+                    with dpg.table_row():
+                        dpg.add_text(str(v_id))
+                        dpg.add_text(v_patente)
+                        dpg.add_text(v_marca_modelo)
+                        dpg.add_text(v_color)
+                        dpg.add_text(str(v_anio))
+                        dpg.add_text(v_estado)
+                        dpg.add_text(v_precio)
+                        
+                        with dpg.group(horizontal=True):
+                            dpg.add_button(
+                                label="Editar",
+                                callback=lambda s, a, u=vehiculo_data: _on_editar_vehiculo(u),
+                                width=70,
+                                user_data=vehiculo_data
+                            )
+                            dpg.add_button(
+                                label="Eliminar",
+                                callback=lambda s, a, u=vehiculo_data: _on_eliminar_vehiculo(u),
+                                width=70,
+                                user_data=vehiculo_data
+                            )
+            except Exception as e:
+                print(f"[Vehiculos] Error cargando datos iniciales: {e}")
     
     register_view("vehiculos", _TAG)
