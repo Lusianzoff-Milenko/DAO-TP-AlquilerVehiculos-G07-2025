@@ -138,7 +138,9 @@ class Container(containers.DeclarativeContainer):
         VehiculoController,
         vehiculo_service=vehiculo_service,
         modelo_service=modelo_service,
-        color_service=color_service
+        color_service=color_service,
+        estado_service=estado_service,
+        marca_service=marca_service
     )
 
     cliente_controller = providers.Factory(

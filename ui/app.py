@@ -116,11 +116,12 @@ def run_app():
     # Crear container e inyectar dependencias
     container = Container()
     cliente_controller = container.cliente_controller()
+    vehiculo_controller = container.vehiculo_controller()
 
     register_login()
     register_home()
     register_clientes(cliente_controller)
-    register_vehiculos()
+    register_vehiculos(vehiculo_controller)
     register_reportes()
 
     dpg.configure_item("sidebar", show=False)
