@@ -24,7 +24,9 @@ from .view_repositories import (
     VistaFacturacionRepository,
     VistaUtilizacionRepository,
     VistaVehiculosRepository,
-    VistaEmpleadosRepository)
+    VistaEmpleadosRepository,
+    VistaHistorialMantenimientoRepository,
+    VistaDemandaPorModeloRepository)
 
 __all__ = [
     "SQLAlchemyRepository",
@@ -52,5 +54,7 @@ __all__ = [
     "VistaFacturacionRepository",
     "VistaUtilizacionRepository",
     "VistaVehiculosRepository",
-    "VistaEmpleadosRepository"
+    "VistaEmpleadosRepository",
+    "VistaHistorialMantenimientoRepository",
+    "VistaDemandaPorModeloRepository"
 ]

@@ -50,3 +50,15 @@ class ReporteController:
         Retorna el listado de empleados con su actividad reciente.
         """
         return self._service.get_empleados_activos()
+
+    def get_demanda_por_modelo(self) -> List[Dict[str, Any]]:
+        """
+        Retorna el análisis de demanda por modelo de vehículo.
+        """
+        return self._service.get_demanda_por_modelo()
+
+    def get_historial_mantenimiento(self) -> List[Dict[str, Any]]:
+        """
+        Retorna el historial de mantenimiento de los vehículos.
+        """
+        return self._service.get_historial_mantenimiento()

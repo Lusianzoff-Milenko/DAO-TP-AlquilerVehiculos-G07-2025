@@ -89,3 +89,22 @@ class VistaEmpleados(Base):
     fecha_salida = Column("Fecha_Egreso", String)
     telefono = Column("Teléfono", String)
     mail = Column("Correo_Electrónico", String)
+
+class VistaDemandaPorModelo(Base):
+    __tablename__ = 'VistaDemandaPorModelo'
+    modelo = Column("Modelo", String, primary_key=True)
+    marca = Column("Marca", String)
+    cantidad_alquileres = Column("Total_Alquileres", Integer)
+    total_dias_reservados_contratados = Column("Total_Dias_Reservados_Contratados", Float)
+    motor = Column("Motor", String)
+    cantidad_pasajeros = Column("Cantidad_Pasajeros", Integer)
+    cantidad_puertas = Column("Cantidad_Puertas", Integer)
+
+class VistaHistorialMantenimiento(Base):
+    __tablename__ = 'VistaHistorialMantenimiento'
+    patente = Column("Patente_Vehiculo", String, primary_key=True)
+    fecha_mantenimiento = Column("Fecha_Mantenimiento", String, primary_key=True)
+    descripcion = Column("Descripción", String)
+    costo = Column("Costo", Float)
+    estado_actual = Column("Estado_Mantenimiento", String)
+    empleado_responsable = Column("Empleado_Responsable", String)

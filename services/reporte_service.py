@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Literal
 from data_access.repositories.view_repositories import (
     VistaClientesRepository, VistaRentabilidadRepository,
     VistaDisponibilidadRepository, VistaFacturacionRepository,
-    VistaUtilizacionRepository, VistaVehiculosRepository, VistaEmpleadosRepository
+    VistaUtilizacionRepository, VistaVehiculosRepository, VistaEmpleadosRepository, VistaHistorialMantenimientoRepository, VistaDemandaPorModeloRepository
 )
 
 
@@ -15,7 +15,9 @@ class ReporteService:
                  vista_facturacion_repo: VistaFacturacionRepository,
                  vista_utilizacion_repo: VistaUtilizacionRepository,
                  vista_vehiculos_repo: VistaVehiculosRepository,
-                 vista_empleados_repo: VistaEmpleadosRepository):
+                 vista_empleados_repo: VistaEmpleadosRepository,
+                 vista_historial_mantenimiento_repo: VistaHistorialMantenimientoRepository,
+                 vista_demanda_por_modelo_repo: VistaDemandaPorModeloRepository):
         self._clientes = vista_clientes_repo
         self._rentabilidad = vista_rentabilidad_repo
         self._disponibilidad = vista_disponibilidad_repo
@@ -23,6 +25,8 @@ class ReporteService:
         self._utilizacion = vista_utilizacion_repo
         self._vehiculos = vista_vehiculos_repo
         self._empleados = vista_empleados_repo
+        self._historial_mantenimiento = vista_historial_mantenimiento_repo
+        self._demanda_por_modelo = vista_demanda_por_modelo_repo
 
     # --- Reportes de Clientes ---
     def get_clientes_contacto(self) -> List[Dict]:
@@ -120,4 +124,32 @@ class ReporteService:
                 "Puesto": e.puesto
             }
             for e in data if e.estado == "Activo"
+        ]
+
+    def get_demanda_por_modelo(self) -> List[Dict]:
+        """Análisis de demanda por modelo de vehículo."""
+        data = self._demanda_por_modelo.list_all()
+        return [
+            {
+                "Modelo": m.modelo,
+                "Cantidad Alquileres": m.cantidad_alquileres,
+                "Ingresos Generados": m.total_dias_reservados_contratados
+            }
+            for m in data
+        ]
+
+    def get_historial_mantenimiento(self) -> List[Dict]:
+        """Historial de mantenimiento de vehículos."""
+        data = self._historial_mantenimiento.list_all()
+        return [
+            {
+                "Vehículo": f""
+                            f"({h.patente})",
+                "Fecha Mantenimiento": h.fecha_mantenimiento,
+                "Tipo Mantenimiento": h.descripcion,
+                "Costo": h.costo,
+                "Estado": h.estado_actual,
+                "Empleado Responsable": h.empleado_responsable
+            }
+            for h in data
         ]

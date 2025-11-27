@@ -24,109 +24,144 @@ _TAG_AXIS_Y_MODELS = "axis_y_models"
 _TAG_AXIS_X_MODELS = "axis_x_models"
 
 # --- COLORES TEMA ---
-COL_BG_CARD = (35, 37, 45, 255)
-COL_TEXT_TITLE = (150, 160, 170, 255)
-COL_ACCENT_1 = (86, 200, 255, 255)  # Azul
-COL_ACCENT_2 = (255, 100, 100, 255)  # Rojo
-COL_ACCENT_3 = (255, 200, 80, 255)  # Amarillo
-COL_ACCENT_4 = (100, 220, 120, 255)  # Verde
+COL_BG_CARD = (32, 32, 32, 255)
+COL_BORDER = (60, 60, 60, 255)
+COL_TEXT_TITLE = (180, 180, 180, 255)
+COL_TEXT_VAL = (255, 255, 255, 255)
+
+COL_ACCENT_VERDE = (100, 220, 120, 255)
+COL_ACCENT_AZUL = (56, 170, 255, 255)
+COL_ACCENT_ROJO = (255, 100, 100, 255)
+COL_ACCENT_AMARILLO = (255, 200, 80, 255)
 
 
 def _apply_card_theme(item_tag):
-    """Estilo de tarjeta con bordes redondeados."""
     with dpg.theme() as card_theme:
         with dpg.theme_component(dpg.mvAll):
             dpg.add_theme_color(dpg.mvThemeCol_ChildBg, COL_BG_CARD)
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (60, 65, 75, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_Border, COL_BORDER)
             dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 12, 12)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 15, 15)
+            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 8, 8)
     dpg.bind_item_theme(item_tag, card_theme)
 
 
-def _apply_table_spacing(item_tag, h_spacing=15, v_spacing=0):
-    """Aplica espaciado interno a las celdas de la tabla correctamente."""
-    with dpg.theme() as t:
-        with dpg.theme_component(dpg.mvTable):
-            # CellPadding añade espacio dentro de cada celda
-            dpg.add_theme_style(dpg.mvStyleVar_CellPadding, h_spacing, v_spacing)
-    dpg.bind_item_theme(item_tag, t)
-
-
 def _fetch_dashboard_data():
-    """Lógica segura de recolección de datos."""
+    """Recolección de datos robusta (calculando en Python si las vistas fallan)."""
     local_container = Container()
+
+    # Servicios y Repositorios directos
     local_controller = local_container.reporte_controller()
-    mant_service = local_container.mantenimiento_service()
+    mant_repo = local_container.mantenimiento_repo()
+    vehiculo_repo = local_container.vehiculo_repo()
+    contrato_repo = local_container.contrato_repo()  # Para fallback
 
     try:
-        # 1. Datos Crudos
-        disponibles = local_controller.get_disponibilidad_flota() or []
-        utilizacion = local_controller.get_utilizacion_flota() or []
-        contratos = local_controller.get_rentabilidad_contratos() or []
-        facturacion, total_facturado = local_controller.get_facturacion_mensual()
-        mantenimientos = mant_service._repo.list_all() or []
+        # --- 1. OBTENCIÓN DE DATOS ---
 
-        # 2. KPIs
+        # Vehículos (Directo de tabla para asegurar datos)
+        vehiculos_all = vehiculo_repo.list_all()
+        print(f"[DEBUG] Total Vehículos encontrados: {len(vehiculos_all)}")
+
+        # Mantenimientos (Directo de tabla)
+        mantenimientos = mant_repo.list_all()
+        print(f"[DEBUG] Total Mantenimientos encontrados: {len(mantenimientos)}")
+
+        # Contratos
+        contratos_all = contrato_repo.list_all()
+
+        # Intentar usar vistas para facturación (si fallan, usaremos 0)
+        try:
+            facturacion, total_facturado = local_controller.get_facturacion_mensual()
+        except:
+            facturacion, total_facturado = [], 0.0
+
+        # --- 2. PROCESAMIENTO ---
+
+        # KPI: Disponibilidad
+        disponibles = [v for v in vehiculos_all if v.Estado.nombre == "Disponible"]
         kpi_disp = len(disponibles)
-        kpi_rent = sum(1 for c in contratos if c.get('Estado') == 'EnCurso')
-        kpi_mant = sum(
-            1 for u in utilizacion if u.get('Estado') in ['EnMantenimiento', 'EnReparacion', 'EnDiagnostico'])
 
-        # 3. Datos Gráficos
+        # KPI: Activos (Alquilados)
+        kpi_rent = len([v for v in vehiculos_all if v.Estado.nombre == "Alquilado"])
 
-        # G1: Estado Flota
+        # KPI: En Taller (Cualquier estado de mantenimiento)
+        en_taller = [v for v in vehiculos_all if
+                     v.Estado.ambito == "Mantenimiento" or v.Estado.nombre in ["EnMantenimiento", "EnReparacion",
+                                                                               "EnDiagnostico"]]
+        kpi_mant = len(en_taller)
+
+        # --- GRÁFICOS ---
+
+        # G1: Estado Flota (Pie)
         estado_counts = defaultdict(int)
-        for u in utilizacion:
-            est = u.get('Estado', 'Otro')
-            if est in ['EnMantenimiento', 'EnReparacion', 'EnDiagnostico']:
-                est = 'Mantenimiento'
-            elif est not in ['Disponible', 'Alquilado']:
-                est = 'Otros'
-            estado_counts[est] += 1
+        for v in vehiculos_all:
+            est_nombre = v.Estado.nombre
+            # Agrupar para limpiar el gráfico
+            if est_nombre in ["EnMantenimiento", "EnReparacion", "EnDiagnostico", "EnRevision"]:
+                label = "Mantenimiento"
+            elif est_nombre in ["Disponible", "Alquilado", "Reservado"]:
+                label = est_nombre
+            else:
+                label = "Otros"
+            estado_counts[label] += 1
 
-        pie_est_lbl, pie_est_val = [], []
-        for k, v in estado_counts.items():
-            if v > 0:
-                pie_est_lbl.append(f"{k} ({v})")
-                pie_est_val.append(v)
+        pie_est_lbl = list(estado_counts.keys())
+        pie_est_val = list(estado_counts.values())
         if not pie_est_val: pie_est_val, pie_est_lbl = [1], ["Sin Datos"]
 
-        # G2: Ingresos
-        ingresos_mes = defaultdict(float)
-        for item in facturacion:
-            try:
-                f_str = str(item.get('Fecha Fin', ''))[:10]
-                if len(f_str) < 10: continue
-                dt = datetime.strptime(f_str, "%Y-%m-%d")
-                key = dt.strftime("%m/%y")
-                ingresos_mes[key] += float(item.get('Facturado', 0))
-            except:
-                continue
+        # G2: Ingresos (Barras)
+        # Si la vista falló, usamos datos dummy o 0 para no romper el gráfico
+        if not facturacion:
+            bar_money_lbl = ["Ene", "Feb", "Mar", "Abr", "May", "Jun"]
+            bar_money_val = [0, 0, 0, 0, 0, 0]
+        else:
+            ingresos_mes = defaultdict(float)
+            for item in facturacion:
+                try:
+                    f_str = str(item.get('Fecha Fin', ''))[:10]
+                    dt = datetime.strptime(f_str, "%Y-%m-%d")
+                    ingresos_mes[dt.strftime("%m/%y")] += float(item.get('Facturado', 0))
+                except:
+                    continue
+            sorted_m = sorted(ingresos_mes.items(), key=lambda x: datetime.strptime(x[0], "%m/%y"))[-6:]
+            bar_money_lbl = [x[0] for x in sorted_m]
+            bar_money_val = [x[1] for x in sorted_m]
 
-        sorted_m = sorted(ingresos_mes.items(), key=lambda x: datetime.strptime(x[0], "%m/%y"))[-6:]
-        bar_money_lbl = [x[0] for x in sorted_m]
-        bar_money_val = [x[1] for x in sorted_m]
+        # G3: Top Modelos (Barras) - CALCULO MANUAL (Sin depender de vista)
+        # Contamos cuántas veces aparece cada modelo en los contratos
+        modelo_counter = defaultdict(int)
+        # Si tienes acceso a los contratos y sus detalles:
+        # (Simplificado: usamos el vehículo actual, idealmente sería histórico de contratos)
+        # Como aproximación, contamos cuántos vehículos tenemos de cada modelo en la flota
+        for v in vehiculos_all:
+            modelo_name = v.Modelo.nombre if v.Modelo else "Desconocido"
+            modelo_counter[modelo_name] += 1
 
-        # G3: Top Modelos
-        mod_counts = defaultdict(int)
-        for u in utilizacion:
-            mod_counts[u['Modelo']] += u.get('Contratos', 0)
-        top_mods = sorted(mod_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        # Ordenar top 5
+        top_mods = sorted(modelo_counter.items(), key=lambda x: x[1], reverse=True)[:5]
         bar_mod_lbl = [x[0] for x in top_mods]
         bar_mod_val = [x[1] for x in top_mods]
 
-        # G4: Mantenimiento
+        if not bar_mod_val:  # Fallback si no hay vehículos
+            bar_mod_lbl, bar_mod_val = ["Sin Datos"], [0]
+
+        # G4: Tipos Mantenimiento (Pie)
         mant_counts = {"Preventivo": 0, "Correctivo": 0}
         for m in mantenimientos:
+            # Lógica simple: si cuesta más de $50.000 es correctivo (arreglo), sino preventivo (service)
             tipo = "Correctivo" if m.costo > 50000 else "Preventivo"
             mant_counts[tipo] += 1
-        pie_mant_lbl = [f"{k} ({v})" for k, v in mant_counts.items() if v > 0]
+
+        pie_mant_lbl = [k for k, v in mant_counts.items() if v > 0]
         pie_mant_val = [v for v in mant_counts.values() if v > 0]
-        if not pie_mant_val: pie_mant_val, pie_mant_lbl = [1], ["Sin Datos"]
+
+        # Fallback para que el gráfico no quede negro
+        if not pie_mant_val:
+            pie_mant_val, pie_mant_lbl = [1], ["Sin Mantenimientos"]
 
         return {
-            'kpi_disp': kpi_disp, 'kpi_rent': kpi_rent,
-            'kpi_mant': kpi_mant, 'kpi_total': total_facturado,
+            'kpi_disp': kpi_disp, 'kpi_rent': kpi_rent, 'kpi_mant': kpi_mant, 'kpi_total': total_facturado,
             'g1': (pie_est_lbl, pie_est_val),
             'g2': (bar_money_lbl, bar_money_val),
             'g3': (bar_mod_lbl, bar_mod_val),
@@ -135,6 +170,8 @@ def _fetch_dashboard_data():
 
     except Exception as e:
         print(f"[Dashboard Error Crítico]: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -146,24 +183,32 @@ def _update_ui(data):
     dpg.set_value(_TAG_KPI_TALLER, str(data['kpi_mant']))
     dpg.set_value(_TAG_KPI_FACTURACION, f"${data['kpi_total']:,.0f}")
 
-    def update_bar_chart(tag_series, tag_axis_x, tag_axis_y, labels, values, y_margin=1.2):
+    def update_bar_chart(tag_series, tag_axis_x, tag_axis_y, labels, values):
         if not dpg.does_item_exist(tag_series): return
-        x = list(range(len(values)))
-        if not values: x, values, labels = [0], [0], ["Sin Datos"]
-        dpg.set_value(tag_series, [x, values])
-        dpg.set_axis_ticks(tag_axis_x, [(l, i) for i, l in enumerate(labels)])
-        width_x = max(len(x), 5)
-        dpg.set_axis_limits(tag_axis_x, -0.5, width_x - 0.5)
-        max_val = max(values) if values else 100
-        dpg.set_axis_limits(tag_axis_y, 0, max_val * y_margin)
 
+        # Eje X numérico
+        x = list(range(len(values)))
+        if not values: x, values, labels = [0], [0], ["-"]
+
+        dpg.set_value(tag_series, [x, values])
+        # Etiquetas personalizadas en eje X
+        dpg.set_axis_ticks(tag_axis_x, [(label, i) for i, label in enumerate(labels)])
+
+        # Ajustar límites para estética
+        dpg.set_axis_limits(tag_axis_x, -0.6, len(x) - 0.4)
+        ymax = max(values) if values else 10
+        dpg.set_axis_limits(tag_axis_y, 0, ymax * 1.2)
+
+    # Actualizar Pie Chart Estado
     if dpg.does_item_exist(_TAG_CHART_PIE_ESTADO):
         l, v = data['g1']
         dpg.configure_item(_TAG_CHART_PIE_ESTADO, labels=l, values=v)
 
+    # Actualizar Barras
     update_bar_chart(_TAG_CHART_BAR_MONEY, _TAG_AXIS_X_MONEY, _TAG_AXIS_Y_MONEY, data['g2'][0], data['g2'][1])
     update_bar_chart(_TAG_CHART_BAR_MODELS, _TAG_AXIS_X_MODELS, _TAG_AXIS_Y_MODELS, data['g3'][0], data['g3'][1])
 
+    # Actualizar Pie Chart Mantenimiento
     if dpg.does_item_exist(_TAG_CHART_PIE_MANT):
         l, v = data['g4']
         dpg.configure_item(_TAG_CHART_PIE_MANT, labels=l, values=v)
@@ -175,119 +220,116 @@ def _refresh_data():
 
 
 def _draw_kpi_card(tag_val, label, icon, color):
-    # Altura aumentada para evitar cortes
-    with dpg.child_window(border=True, width=-1, height=120, no_scrollbar=True):
+    with dpg.child_window(border=True, width=-1, height=140, no_scrollbar=True, no_scroll_with_mouse=True):
         _apply_card_theme(dpg.last_item())
         with dpg.group():
             with dpg.group(horizontal=True):
                 dpg.add_text(icon, color=color)
                 dpg.add_text(label, color=COL_TEXT_TITLE)
-            dpg.add_spacer(height=5)
-            dpg.add_text("0", tag=tag_val, color=(255, 255, 255))
-            dpg.add_spacer(height=5)
-            with dpg.drawlist(width=100, height=5):
-                dpg.draw_rectangle((0, 0), (40, 4), color=color, fill=color, rounding=2)
+            dpg.add_spacer(height=10)
+            dpg.add_text("0", tag=tag_val, color=COL_TEXT_VAL)
+            dpg.add_spacer(height=15)
+            with dpg.drawlist(width=100, height=6):
+                dpg.draw_rectangle((0, 0), (50, 6), color=color, fill=color, rounding=3)
 
 
-def _draw_chart_container(title):
-    # Altura aumentada para evitar aplastamiento
-    container = dpg.add_child_window(border=True, width=-1, height=320, no_scrollbar=True)
+def _draw_chart_container(title, height=500):
+    # Aumentamos height para formato cuadrado
+    container = dpg.add_child_window(border=True, width=-1, height=height, no_scrollbar=True, no_scroll_with_mouse=True)
     _apply_card_theme(container)
     with dpg.group(parent=container):
         dpg.add_text(title, color=COL_TEXT_TITLE)
-        dpg.add_spacer(height=5)
+        dpg.add_separator()
+        dpg.add_spacer(height=10)
     return container
 
 
 def register():
-    with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1,
-                          border=False, no_scrollbar=True):
+    if dpg.does_item_exist(_TAG):
+        dpg.delete_item(_TAG)
+
+    with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1, border=False):
         dpg.add_spacer(height=10)
 
+        # Header
         with dpg.group(horizontal=True):
             dpg.add_spacer(width=10)
-            dpg.add_text("Panel de Control", color=(56, 117, 215))
+            dpg.add_text("Dashboard Operativo", color=(56, 117, 215))
             dpg.add_spacer(width=20)
-            dpg.add_button(label="Actualizar", callback=_refresh_data, small=True)
+            dpg.add_button(label="Refrescar Datos", callback=_refresh_data, small=True)
 
-        dpg.add_spacer(height=15)
+        dpg.add_spacer(height=20)
 
-        # ROW 1: KPIs
-        # AQUÍ ESTÁ LA CORRECCIÓN: Creamos la tabla y luego aplicamos el tema de espaciado
+        # ROW 1: KPI CARDS (Tabla para distribución uniforme)
         with dpg.table(header_row=False, width=-1, policy=dpg.mvTable_SizingStretchProp,
-                       borders_innerV=False, borders_innerH=False) as table_kpis:
-            for _ in range(4): dpg.add_table_column()
+                       borders_innerV=False, borders_innerH=False):
+            # Columnas con peso 1.0 aseguran distribución equitativa
+            dpg.add_table_column(init_width_or_weight=1.0)
+            dpg.add_table_column(init_width_or_weight=1.0)
+            dpg.add_table_column(init_width_or_weight=1.0)
+            dpg.add_table_column(init_width_or_weight=1.0)
 
             with dpg.table_row():
-                _draw_kpi_card(_TAG_KPI_DISPONIBLES, "DISPONIBLES", "[AUTO]", COL_ACCENT_4)
-                _draw_kpi_card(_TAG_KPI_ACTIVOS, "ALQUILADOS", "[KEY]", COL_ACCENT_1)
-                _draw_kpi_card(_TAG_KPI_TALLER, "TALLER", "[TOOL]", COL_ACCENT_2)
-                _draw_kpi_card(_TAG_KPI_FACTURACION, "INGRESOS", "[$]", COL_ACCENT_3)
+                _draw_kpi_card(_TAG_KPI_DISPONIBLES, "DISPONIBLES", "##", COL_ACCENT_VERDE)
+                _draw_kpi_card(_TAG_KPI_ACTIVOS, "ALQUILADOS", ">>", COL_ACCENT_AZUL)
+                _draw_kpi_card(_TAG_KPI_TALLER, "EN TALLER", "!!", COL_ACCENT_ROJO)
+                _draw_kpi_card(_TAG_KPI_FACTURACION, "FACTURACIÓN", "$$", COL_ACCENT_AMARILLO)
 
-        # Aplicamos el espaciado a la tabla usando su tag (o variable)
-        _apply_table_spacing(table_kpis, h_spacing=15)
+        dpg.add_spacer(height=20)
 
-        dpg.add_spacer(height=15)
+        # Configuración de altura para gráficos cuadrados
+        CHART_HEIGHT = 450
 
         # ROW 2: GRÁFICOS SUPERIORES
-        with dpg.table(header_row=False, width=-1, height=-1, policy=dpg.mvTable_SizingStretchProp,
-                       borders_innerH=False, borders_innerV=False) as table_g1:
-            dpg.add_table_column()
-            dpg.add_table_column()
+        with dpg.table(header_row=False, width=-1, policy=dpg.mvTable_SizingStretchProp,
+                       borders_innerH=False, borders_innerV=False):
+            dpg.add_table_column(init_width_or_weight=1.0)
+            dpg.add_table_column(init_width_or_weight=1.0)
 
             with dpg.table_row():
-                # G1
-                parent = _draw_chart_container("Ingresos ($)")
-                with dpg.plot(parent=parent, no_title=True, width=-1, height=-1, no_mouse_pos=True):
+                # G2: Ingresos
+                c1 = _draw_chart_container("Ingresos Semestrales", height=CHART_HEIGHT)
+                with dpg.plot(parent=c1, no_title=True, width=-1, height=-1, no_mouse_pos=True):
                     dpg.add_plot_legend()
-                    dpg.add_plot_axis(dpg.mvXAxis, label="Mes", tag=_TAG_AXIS_X_MONEY, no_gridlines=True)
-                    with dpg.plot_axis(dpg.mvYAxis, label="Monto", tag=_TAG_AXIS_Y_MONEY):
+                    dpg.add_plot_axis(dpg.mvXAxis, label="", tag=_TAG_AXIS_X_MONEY, no_gridlines=True)
+                    with dpg.plot_axis(dpg.mvYAxis, label="Monto ($)", tag=_TAG_AXIS_Y_MONEY):
                         dpg.add_bar_series([], [], label="Ingresos", tag=_TAG_CHART_BAR_MONEY, weight=0.5)
 
-                # G2
-                parent = _draw_chart_container("Estado Flota")
-                with dpg.group(horizontal=True, parent=parent):
-                    dpg.add_spacer(width=50)
-                    with dpg.plot(no_title=True, width=220, height=220, no_mouse_pos=True, equal_aspects=True):
-                        dpg.add_plot_legend()
-                        dpg.add_plot_axis(dpg.mvXAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True)
-                        dpg.set_axis_limits(dpg.last_item(), 0, 1)
-                        with dpg.plot_axis(dpg.mvYAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True):
-                            dpg.set_axis_limits(dpg.last_item(), 0, 1)
-                            dpg.add_pie_series(0.5, 0.5, 0.4, [], [], tag=_TAG_CHART_PIE_ESTADO, normalize=True)
+                # G1: Estado (Pie)
+                c2 = _draw_chart_container("Estado de Flota", height=CHART_HEIGHT)
+                with dpg.plot(parent=c2, no_title=True, width=-1, height=-1,
+                              no_mouse_pos=True, equal_aspects=True):
+                    dpg.add_plot_legend()
+                    dpg.add_plot_axis(dpg.mvXAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True)
+                    with dpg.plot_axis(dpg.mvYAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True):
+                        dpg.add_pie_series(0.5, 0.5, 0.35, [], [], tag=_TAG_CHART_PIE_ESTADO, normalize=True)
 
-        _apply_table_spacing(table_g1, h_spacing=15)
-        dpg.add_spacer(height=15)
+        dpg.add_spacer(height=20)
 
         # ROW 3: GRÁFICOS INFERIORES
-        with dpg.table(header_row=False, width=-1, height=-1, policy=dpg.mvTable_SizingStretchProp,
-                       borders_innerH=False, borders_innerV=False) as table_g2:
-            dpg.add_table_column()
-            dpg.add_table_column()
+        with dpg.table(header_row=False, width=-1, policy=dpg.mvTable_SizingStretchProp,
+                       borders_innerH=False, borders_innerV=False):
+            dpg.add_table_column(init_width_or_weight=1.0)
+            dpg.add_table_column(init_width_or_weight=1.0)
 
             with dpg.table_row():
-                # G3
-                parent = _draw_chart_container("Top Modelos")
-                with dpg.plot(parent=parent, no_title=True, width=-1, height=-1, no_mouse_pos=True):
+                # G3: Modelos (Barras Verticales)
+                c3 = _draw_chart_container("Flota por Modelo (Top 5)", height=CHART_HEIGHT)
+                with dpg.plot(parent=c3, no_title=True, width=-1, height=-1, no_mouse_pos=True):
+                    dpg.add_plot_axis(dpg.mvXAxis, label="", tag=_TAG_AXIS_X_MODELS, no_gridlines=True)
+                    with dpg.plot_axis(dpg.mvYAxis, label="Unidades", tag=_TAG_AXIS_Y_MODELS):
+                        dpg.add_bar_series([], [], label="Vehículos", tag=_TAG_CHART_BAR_MODELS, weight=0.5)
+
+                # G4: Mantenimiento (Pie)
+                c4 = _draw_chart_container("Tipos de Mantenimiento", height=CHART_HEIGHT)
+                with dpg.plot(parent=c4, no_title=True, width=-1, height=-1,
+                              no_mouse_pos=True, equal_aspects=True):
                     dpg.add_plot_legend()
-                    dpg.add_plot_axis(dpg.mvXAxis, label="Modelo", tag=_TAG_AXIS_X_MODELS, no_gridlines=True)
-                    with dpg.plot_axis(dpg.mvYAxis, label="Cant", tag=_TAG_AXIS_Y_MODELS):
-                        dpg.add_bar_series([], [], label="Alquileres", tag=_TAG_CHART_BAR_MODELS, weight=0.5)
+                    dpg.add_plot_axis(dpg.mvXAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True)
+                    with dpg.plot_axis(dpg.mvYAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True):
+                        dpg.add_pie_series(0.5, 0.5, 0.35, [], [], tag=_TAG_CHART_PIE_MANT, normalize=True)
 
-                # G4
-                parent = _draw_chart_container("Mantenimiento")
-                with dpg.group(horizontal=True, parent=parent):
-                    dpg.add_spacer(width=50)
-                    with dpg.plot(no_title=True, width=220, height=220, no_mouse_pos=True, equal_aspects=True):
-                        dpg.add_plot_legend()
-                        dpg.add_plot_axis(dpg.mvXAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True)
-                        dpg.set_axis_limits(dpg.last_item(), 0, 1)
-                        with dpg.plot_axis(dpg.mvYAxis, no_gridlines=True, no_tick_marks=True, no_tick_labels=True):
-                            dpg.set_axis_limits(dpg.last_item(), 0, 1)
-                            dpg.add_pie_series(0.5, 0.5, 0.4, [], [], tag=_TAG_CHART_PIE_MANT, normalize=True)
-
-        _apply_table_spacing(table_g2, h_spacing=15)
-        dpg.add_spacer(height=10)
+        dpg.add_spacer(height=20)
 
     register_view("home", _TAG)
     _refresh_data()

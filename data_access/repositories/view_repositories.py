@@ -28,3 +28,13 @@ class VistaEmpleadosRepository(SQLAlchemyRepository):
     def __init__(self, session: Session):
         from data_access.vistas.views import VistaEmpleados
         super().__init__(session, VistaEmpleados)
+
+class VistaHistorialMantenimientoRepository(SQLAlchemyRepository):
+    def __init__(self, session: Session):
+        from data_access.vistas.views import VistaHistorialMantenimiento
+        super().__init__(session, VistaHistorialMantenimiento)
+
+class VistaDemandaPorModeloRepository(SQLAlchemyRepository):
+    def __init__(self, session: Session):
+        from data_access.vistas.views import VistaDemandaPorModelo
+        super().__init__(session, VistaDemandaPorModelo)
