@@ -10,7 +10,7 @@ from data_access.repositories import (
     MetodoDePagoRepository, EmpleadoRepository, DetalleContratoRepository,
     MarcaRepository, TipoDocumentoRepository, TipoPuestoRepository,
     TipoInconvenienteRepository, InconvenienteRepository, MantenimientoRepository,
-    PersonaRepository, FotoXModeloRepository, ModeloXColorRepository
+    PersonaRepository, FotoXModeloRepository, ModeloXColorRepository, VistaEmpleadosRepository
 )
 
 # 3. Repositorios de Vistas (Reportes)
@@ -73,6 +73,7 @@ class Container(containers.DeclarativeContainer):
     vista_facturacion_repo = providers.Factory(VistaFacturacionRepository, session=db_session)
     vista_utilizacion_repo = providers.Factory(VistaUtilizacionRepository, session=db_session)
     vista_vehiculos_repo = providers.Factory(VistaVehiculosRepository, session=db_session)
+    vista_empleados_repo = providers.Factory(VistaEmpleadosRepository, session=db_session)
 
     # --- Servicios (Factories con inyección de repositorios y otros servicios) ---
 
@@ -131,7 +132,8 @@ class Container(containers.DeclarativeContainer):
         vista_disponibilidad_repo=vista_disponibilidad_repo,
         vista_facturacion_repo=vista_facturacion_repo,
         vista_utilizacion_repo=vista_utilizacion_repo,
-        vista_vehiculos_repo=vista_vehiculos_repo
+        vista_vehiculos_repo=vista_vehiculos_repo,
+        vista_empleados_repo=vista_empleados_repo
     )
 
     vehiculo_controller = providers.Factory(

@@ -1,4 +1,5 @@
-from typing import List, Dict, Any, Tuple
+from decimal import Decimal
+from typing import List, Dict, Any, Tuple, Literal
 from services.reporte_service import ReporteService
 
 class ReporteController:
@@ -29,7 +30,8 @@ class ReporteController:
         """
         return self._service.get_rentabilidad_contratos()
 
-    def get_facturacion_mensual(self) -> Tuple[List[Dict[str, Any]], float]:
+    def get_facturacion_mensual(self) -> tuple[
+        list[dict[str, int | str | Decimal | float]], Decimal | float | Literal[0]]:
         """
         Retorna una tupla: (Lista de registros, Total Facturado Global).
         Útil para llenar una tabla y un KPI Card al mismo tiempo.

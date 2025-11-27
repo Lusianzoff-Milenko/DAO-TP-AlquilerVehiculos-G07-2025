@@ -51,5 +51,6 @@ __all__ = [
     "VistaDisponibilidadRepository",
     "VistaFacturacionRepository",
     "VistaUtilizacionRepository",
-    "VistaVehiculosRepository"
+    "VistaVehiculosRepository",
+    "VistaEmpleadosRepository"
 ]
