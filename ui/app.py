@@ -7,9 +7,11 @@ from services.containers.container import Container
 # Importamos las vistas
 from ui.windows.home import register as register_home
 from ui.windows.login import register as register_login
+
 from ui.windows.clientes import register as register_clientes
 from ui.windows.vehiculos import register as register_vehiculos
 from ui.windows.reportes import register as register_reportes
+from ui.windows.empleados import register as register_empleados
 
 SIDEBAR_WIDTH = 250
 
@@ -113,14 +115,17 @@ def run_app():
     _build_layout()
 
     # Crear container e inyectar dependencias
+
     container = Container()
     cliente_controller = container.cliente_controller()
     vehiculo_controller = container.vehiculo_controller()
+    empleado_controller = container.empleado_controller()
 
     register_login()
     register_home()
     register_clientes(cliente_controller)
     register_vehiculos(vehiculo_controller)
+    register_empleados(empleado_controller)
     register_reportes()
 
     dpg.configure_item("sidebar", show=False)
