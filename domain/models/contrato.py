@@ -23,8 +23,6 @@ class Contrato(Base):
     id_estado: int = Column(Integer, ForeignKey('Estado.id'), nullable=False)
     tiene_seguro: bool = Column(Boolean, nullable=False)
 
-    # --- CAMBIO: ELIMINAMOS LA DEFINICIÓN DE detalles_contrato AQUÍ ---
-    # Se inyectará automáticamente desde DetalleContrato usando backref
     detalles_contrato: List[DetalleContrato]
 
     Cliente = relationship("Cliente")

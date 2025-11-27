@@ -8,6 +8,29 @@ from services.metododepago_service import MetodoDePagoService
 
 
 class ContratoController:
+    def get_all_contratos_en_curso(self) -> List[Dict[str, Any]]:
+        contratos = self._service._repo.list_all()
+        data = []
+        for c in contratos:
+            # Solo mostrar contratos en estado EnCurso o EnReservado
+            if c.Estado and c.Estado.nombre not in ["Cancelado", "YaEntregado"]:
+                patente = "N/A"
+                v = None
+                if c.detalles_contrato and len(c.detalles_contrato) > 0:
+                    v = c.detalles_contrato[0].Vehiculo
+                    if v:
+                        patente = v.patente
+                precio_diario = v.precio_base if v else ""
+                data.append({
+                    "ID": c.id,
+                    "Cliente": f"{c.Cliente.persona.nombre} {c.Cliente.persona.apellido}" if c.Cliente and c.Cliente.persona else "S/D",
+                    "Vehiculo": patente,
+                    "FechaDesde": c.fecha_desde.strftime("%d/%m/%Y"),
+                    "FechaHasta": c.fecha_hasta.strftime("%d/%m/%Y"),
+                    "Estado": c.Estado.nombre if c.Estado else "N/A",
+                    "PrecioDiario": precio_diario
+                })
+        return data
     def __init__(self,
                  contrato_service: ContratoService,
                  vehiculo_service: VehiculoService,
