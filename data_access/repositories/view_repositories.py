@@ -23,3 +23,8 @@ class VistaUtilizacionRepository(SQLAlchemyRepository[VistaUtilizacionFlota]):
 
 class VistaVehiculosRepository(SQLAlchemyRepository[VistaVehiculosDetallados]):
     def __init__(self, session: Session): super().__init__(session, VistaVehiculosDetallados)
+
+class VistaEmpleadosRepository(SQLAlchemyRepository):
+    def __init__(self, session: Session):
+        from data_access.vistas.views import VistaEmpleados
+        super().__init__(session, VistaEmpleados)

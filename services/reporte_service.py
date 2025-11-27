@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Literal
 from data_access.repositories.view_repositories import (
     VistaClientesRepository, VistaRentabilidadRepository,
     VistaDisponibilidadRepository, VistaFacturacionRepository,
-    VistaUtilizacionRepository, VistaVehiculosRepository
+    VistaUtilizacionRepository, VistaVehiculosRepository, VistaEmpleadosRepository
 )
 
 
@@ -14,13 +14,15 @@ class ReporteService:
                  vista_disponibilidad_repo: VistaDisponibilidadRepository,
                  vista_facturacion_repo: VistaFacturacionRepository,
                  vista_utilizacion_repo: VistaUtilizacionRepository,
-                 vista_vehiculos_repo: VistaVehiculosRepository):
+                 vista_vehiculos_repo: VistaVehiculosRepository,
+                 vista_empleados_repo: VistaEmpleadosRepository):
         self._clientes = vista_clientes_repo
         self._rentabilidad = vista_rentabilidad_repo
         self._disponibilidad = vista_disponibilidad_repo
         self._facturacion = vista_facturacion_repo
         self._utilizacion = vista_utilizacion_repo
         self._vehiculos = vista_vehiculos_repo
+        self._empleados = vista_empleados_repo
 
     # --- Reportes de Clientes ---
     def get_clientes_contacto(self) -> List[Dict]:
@@ -105,3 +107,17 @@ class ReporteService:
             for r in data
         ]
         return reporte, total_global
+
+    def get_empleados_activos(self) -> List[Dict]:
+        """Listado de empleados activos con detalles."""
+        data = self._empleados.list_all()
+        return [
+            {
+                "Nombre": f"{e.nombre} {e.apellido}",
+                "Documento": f"{e.tipo_documento} {e.documento}",
+                "Cargo": e.cargo,
+                "Contacto": f"{e.mail} | {e.telefono}",
+                "Puesto": e.puesto
+            }
+            for e in data if e.estado == "Activo"
+        ]

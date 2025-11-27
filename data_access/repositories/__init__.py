@@ -23,7 +23,8 @@ from .view_repositories import (
     VistaDisponibilidadRepository,
     VistaFacturacionRepository,
     VistaUtilizacionRepository,
-    VistaVehiculosRepository)
+    VistaVehiculosRepository,
+    VistaEmpleadosRepository)
 
 __all__ = [
     "SQLAlchemyRepository",

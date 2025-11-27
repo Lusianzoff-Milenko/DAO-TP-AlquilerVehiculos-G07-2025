@@ -42,3 +42,9 @@ class ReporteController:
         Retorna el listado completo de vehículos con fotos y detalles técnicos.
         """
         return self._service.get_detalle_flota_completo()
+
+    def get_empleados_activos(self) -> List[Dict[str, Any]]:
+        """
+        Retorna el listado de empleados con su actividad reciente.
+        """
+        return self._service.get_empleados_activos()

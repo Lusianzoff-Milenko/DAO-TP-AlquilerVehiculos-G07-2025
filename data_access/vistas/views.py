@@ -78,3 +78,14 @@ class VistaVehiculosDetallados(Base):
     pasajeros = Column("Cantidad_Pasajeros", Integer)
     precio = Column("Precio_Base", Float)
     estado = Column("Estado_Vehiculo", String)
+
+class VistaEmpleados(Base):
+    __tablename__ = 'VistaEmpleadosPuestos'
+    id_empleado = Column("Empleado_ID", Integer, primary_key=True)
+    nombre = Column("Nombre", String)
+    apellido = Column("Apellido", String)
+    puesto = Column("Puesto", String)
+    fecha_contratacion = Column("Fecha_Ingreso", String)
+    fecha_salida = Column("Fecha_Egreso", String)
+    telefono = Column("Teléfono", String)
+    mail = Column("Correo_Electrónico", String)
