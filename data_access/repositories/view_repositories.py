@@ -38,3 +38,8 @@ class VistaDemandaPorModeloRepository(SQLAlchemyRepository):
     def __init__(self, session: Session):
         from data_access.vistas.views import VistaDemandaPorModelo
         super().__init__(session, VistaDemandaPorModelo)
+
+class VistaCantidadFlotaRepository(SQLAlchemyRepository):
+    def __init__(self, session: Session):
+        from data_access.vistas.views import VistaCantidadFlotaPorModelo
+        super().__init__(session, VistaCantidadFlotaPorModelo)

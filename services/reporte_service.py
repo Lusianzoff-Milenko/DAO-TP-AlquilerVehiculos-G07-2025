@@ -20,7 +20,8 @@ class ReporteService:
                  vista_historial_mantenimiento_repo: VistaHistorialMantenimientoRepository,
                  vista_demanda_por_modelo_repo: VistaDemandaPorModeloRepository,
                  contrato_repo=None,
-                 detalle_contrato_repo=None):
+                 detalle_contrato_repo=None,
+                 vista_cantidad_flota_repo=None):
         self._clientes = vista_clientes_repo
         self._rentabilidad = vista_rentabilidad_repo
         self._disponibilidad = vista_disponibilidad_repo
@@ -30,7 +31,7 @@ class ReporteService:
         self._empleados = vista_empleados_repo
         self._historial_mantenimiento = vista_historial_mantenimiento_repo
         self._demanda_por_modelo = vista_demanda_por_modelo_repo
-
+        self._cantidad_flota = vista_cantidad_flota_repo
         self._contrato_repo = contrato_repo
         self._detalle_contrato_repo = detalle_contrato_repo
 
@@ -229,3 +230,16 @@ class ReporteService:
                 continue
 
         return salida
+
+    def get_conteo_flota_por_modelo(self) -> List[Dict]:
+        if not self._cantidad_flota:
+            return []
+
+        data = self._cantidad_flota.list_all()
+        return [
+            {
+                "Modelo": f"{row.marca} {row.modelo}",
+                "Cantidad": row.cantidad
+            }
+            for row in data
+        ]

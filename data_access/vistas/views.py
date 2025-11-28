@@ -108,3 +108,10 @@ class VistaHistorialMantenimiento(Base):
     costo = Column("Costo", Float)
     estado_actual = Column("Estado_Mantenimiento", String)
     empleado_responsable = Column("Empleado_Responsable", String)
+
+class VistaCantidadFlotaPorModelo(Base):
+    __tablename__ = 'VistaCantidadFlotaPorModelo'
+    # Usamos el nombre del modelo como clave primaria para lectura
+    modelo = Column("Modelo", String, primary_key=True)
+    marca = Column("Marca", String)
+    cantidad = Column("Cantidad", Integer)

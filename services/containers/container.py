@@ -10,7 +10,9 @@ from data_access.repositories import (
     MetodoDePagoRepository, EmpleadoRepository, DetalleContratoRepository,
     MarcaRepository, TipoDocumentoRepository, TipoPuestoRepository,
     TipoInconvenienteRepository, InconvenienteRepository, MantenimientoRepository,
-    PersonaRepository, FotoXModeloRepository, ModeloXColorRepository, VistaEmpleadosRepository, VistaHistorialMantenimientoRepository, VistaDemandaPorModeloRepository
+    PersonaRepository, FotoXModeloRepository, ModeloXColorRepository,
+    VistaEmpleadosRepository, VistaHistorialMantenimientoRepository, VistaDemandaPorModeloRepository,
+    VistaCantidadFlotaRepository
 )
 
 # 3. Repositorios de Vistas (Reportes)
@@ -76,6 +78,7 @@ class Container(containers.DeclarativeContainer):
     vista_empleados_repo = providers.Factory(VistaEmpleadosRepository, session=db_session)
     vista_historial_mantenimiento_repo = providers.Factory(VistaHistorialMantenimientoRepository, session=db_session)
     vista_demanda_por_modelo_repo = providers.Factory(VistaDemandaPorModeloRepository, session=db_session)
+    vista_cantidad_flota_repo = providers.Factory(VistaCantidadFlotaRepository, session=db_session)
 
     # --- Servicios (Factories con inyección de repositorios y otros servicios) ---
 
@@ -137,6 +140,7 @@ class Container(containers.DeclarativeContainer):
         vista_empleados_repo=vista_empleados_repo,
         vista_historial_mantenimiento_repo=vista_historial_mantenimiento_repo,
         vista_demanda_por_modelo_repo=vista_demanda_por_modelo_repo,
+        vista_cantidad_flota_repo=vista_cantidad_flota_repo,  # <--- NUEVO
 
         contrato_repo = contrato_repo,    #nuevo
         detalle_contrato_repo = detalle_contrato_repo   #nuevo
