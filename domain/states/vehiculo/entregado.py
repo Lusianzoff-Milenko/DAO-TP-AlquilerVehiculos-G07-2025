@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from domain.models.contrato import Contrato
 from domain.states.vehiculo.state import State
 from domain.exceptions import StateTransitionError
@@ -13,9 +15,12 @@ class Entregado(State):
         print("LOG: El vehículo ya fue registrado como entregado.")
 
     def mover_a_revision(self) -> None:
-        from domain.states.vehiculo.en_revision import EnRevision
-        print("LOG: Vehículo enviado a revisión de rutina post-alquiler.")
-        self.context.transition_to(EnRevision())
+        if datetime.now().time() == datetime.strptime("12:30", "%H:%M").time():
+            from domain.states.vehiculo.en_revision import EnRevision
+            print("LOG: Vehículo enviado a revisión de rutina post-alquiler.")
+            self.context.transition_to(EnRevision())
+        else:
+            raise StateTransitionError("La revisión solo puede iniciarse durante el horario de revisión (12:30 PM).")
 
     def iniciar_mantenimiento(self) -> None:
         raise StateTransitionError("Debe pasar por revisión antes de ir a mantenimiento.")

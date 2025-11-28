@@ -1,6 +1,10 @@
 # controllers/vehiculo_controller.py
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+
+from domain.models.color import Color
+from domain.models.marca import Marca
+from domain.models.modelo import Modelo
 from domain.models.vehiculo import Vehiculo
 from services.vehiculo_service import VehiculoService
 from services.modelo_service import ModeloService
@@ -118,3 +122,45 @@ class VehiculoController:
             "colores": [{"label": c.nombre, "value": c.id} for c in colores],
             "estados": [{"label": e.nombre, "value": e.id} for e in estados]
         }
+
+    def create_marca(self, nombre: str, descripcion: str) -> bool:
+        """Crea una nueva marca."""
+        try:
+            marca = Marca(nombre=nombre, descripcion=descripcion)
+            result = self._marca_service.create_marca(marca)
+            return result is not None
+        except Exception as e:
+            print(f"Error creando marca: {e}")
+            return False
+
+    def create_color(self, nombre: str) -> bool:
+        """Crea un nuevo color."""
+        try:
+            color = Color(nombre=nombre)
+            result = self._color_service.create_color(color)
+            return result is not None
+        except Exception as e:
+            print(f"Error creando color: {e}")
+            return False
+
+    def create_modelo(self, data: Dict[str, Any]) -> bool:
+        """Crea un nuevo modelo."""
+        try:
+            modelo = Modelo(
+                nombre=data.get("nombre"),
+                id_marca=int(data.get("id_marca")),
+                cantidad_pasajeros=int(data.get("pasajeros", 5)),
+                cantidad_puertas=int(data.get("puertas", 4)),
+                motor=data.get("motor", "1.6L"),
+                anio_lanzamiento=int(data.get("anio", 2024))
+            )
+            result = self._modelo_service.create_modelo(modelo)
+            return result is not None
+        except Exception as e:
+            print(f"Error creando modelo: {e}")
+            return False
+
+    def get_all_marcas(self) -> List[Dict]:
+        """Obtiene lista simple de marcas para combos."""
+        marcas = self._marca_service.list_all_marcas()
+        return [{"label": m.nombre, "value": m.id} for m in marcas]
