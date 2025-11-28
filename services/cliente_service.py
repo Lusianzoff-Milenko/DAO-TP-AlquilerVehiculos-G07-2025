@@ -26,6 +26,10 @@ class ClienteService:
 
     def get_cliente_by_documento(self, documento: str) -> Optional[Cliente]:
         return self._repo.get_by_documento(documento)
+    
+    def get_cliente_by_documento_and_tipo(self, documento: str, tipo_documento: int) -> Optional[Cliente]:
+        return self._repo.get_by_documento_and_tipo_documento(documento, tipo_documento)
+
 
     def list_all_clientes(self) -> List[Cliente]:
         return self._repo.list_all()
@@ -48,3 +52,5 @@ class ClienteService:
             print("No se puede eliminar el cliente porque tiene contratos asociados.")
             self._repo.session.rollback()
             return False
+    
+    
