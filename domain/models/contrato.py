@@ -48,6 +48,22 @@ class Contrato(Base):
         if self._state.__class__ != state.__class__:
             self._state = state
             self._state.context = self
+
+            nuevo_estado_nombre = type(state).__name__
+
+            # Actualizamos el ID en la base de datos buscando en la lista inyectada
+            if self.estados_disponibles:
+                encontrado = False
+                for estado_bd in self.estados_disponibles:
+                    # Comparamos nombres (ignorando mayúsculas/minúsculas por seguridad)
+                    if estado_bd.nombre.lower() == nuevo_estado_nombre.lower():
+                        self.id_estado = estado_bd.id
+                        self.Estado = estado_bd  # Actualizamos también la relación ORM
+                        encontrado = True
+                        break
+
+                if not encontrado:
+                    print(f"¡ADVERTENCIA! No se encontró ID para el estado '{nuevo_estado_nombre}' en la BD.")
             # Lógica de actualización de estado en BD omitida para brevedad, pero mantenla si la tenías
 
     def get_state(self) -> State:

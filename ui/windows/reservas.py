@@ -94,9 +94,16 @@ def _abrir_confirmacion_pago(reserva_data):
             dpg.add_button(label="Cancelar", callback=lambda: dpg.delete_item("modal_pago_reserva"), width=100)
 
 
-def _on_confirmar_entrega():
+# ... código anterior ...
+
+# CAMBIO: Agregar sender, app_data, user_data
+def _on_confirmar_entrega(sender, app_data, user_data):
     global _selected_reserva_id
     monto = dpg.get_value("input_monto_pago")
+
+    # (Opcional) Validación básica
+    if not monto:
+        monto = 0.0
 
     if _contrato_controller.iniciar_alquiler(_selected_reserva_id, monto):
         _show_notification("Vehículo entregado. Contrato pasó a 'En Curso'.")
@@ -105,6 +112,7 @@ def _on_confirmar_entrega():
     else:
         _show_notification("Error al iniciar alquiler.", error=True)
 
+# ... resto del código ...
 
 # ... (El resto de _on_nueva_reserva y _on_guardar_reserva se mantiene igual al paso anterior) ...
 def _on_nueva_reserva():

@@ -133,12 +133,9 @@ class ContratoService:
         if not contrato: return False
 
         if contrato.get_state().tomar_pago(monto):
-            # Mover vehículos de Reservado -> Alquilado
-            est_v_alquilado = self._estado_service.get_estado_by_name_and_ambito("Alquilado", "Vehiculo")
-
             for detalle in contrato.detalles_contrato:
                 vehiculo = detalle.Vehiculo
-                vehiculo.id_estado = est_v_alquilado.id
+                vehiculo.get_state().retirar(contrato)
                 self._repo.session.add(vehiculo)
 
             try:
@@ -156,22 +153,24 @@ class ContratoService:
 
         exito, recargo_dias = contrato.get_state().recibir_devolucion(fecha_devolucion)
         if exito:
-            # Mover vehículos a Entregado (o Disponible si no usas el flujo de revisión estricto)
-            # Según tu populate.py, flujo: Alquilado -> Entregado -> (Revisión) -> Disponible
+            # Mover vehículos a Entregado
             est_v_entregado = self._estado_service.get_estado_by_name_and_ambito("Entregado", "Vehiculo")
 
             for detalle in contrato.detalles_contrato:
                 vehiculo = detalle.Vehiculo
-                vehiculo.id_estado = est_v_entregado.id
+                vehiculo.get_state().entregar()
+
+                # --- AGREGAR ESTA LÍNEA ---
+                # Esto fuerza a SQLAlchemy a registrar el cambio en el vehículo
+                self._repo.session.add(vehiculo)
+                # --------------------------
+
                 # Actualizar fecha real
                 detalle.fecha_entrega = fecha_devolucion
 
-                # Calcular recargos si aplica (Lógica de negocio simple)
                 if recargo_dias > 0:
-                    # Ejemplo: 10% del valor total original por día de retraso
                     costo_extra = (detalle.monto * 0.10) * recargo_dias
-                    # Aquí podrías crear un registro de Inconveniente o sumar al detalle
-                    print(f"Aplicando recargo de ${costo_extra} por {recargo_dias} días de demora.")
+                    print(f"Aplicando recargo de ${costo_extra}")
 
             self._repo.update(contrato)
             return True

@@ -65,6 +65,8 @@ def _confirmar_finalizacion(contrato_data):
             dpg.add_button(label="Cancelar", callback=lambda: dpg.delete_item(modal_tag), width=100)
 
 
+# Archivo: ui/windows/contratos.py
+
 def _refresh_table():
     if not _contrato_controller:
         return
@@ -74,7 +76,7 @@ def _refresh_table():
     # Obtenemos todos los contratos del controlador
     todos_contratos = _contrato_controller.get_all_contratos()
 
-    # Filtramos según el combo seleccionado
+    # Filtrramos según el combo seleccionado
     if _estado_filtro == "Todos":
         contratos = todos_contratos
     else:
@@ -89,9 +91,10 @@ def _refresh_table():
 
     # Rellenamos la tabla
     for contrato in contratos:
+        # ... (código de extracción de datos igual que antes) ...
         nro = contrato.get("ID", "")
         cliente = contrato.get("Cliente", "")
-        fecha_desde = contrato.get("Desde", "")  # Clave actualizada según tu controller
+        fecha_desde = contrato.get("Desde", "")
         fecha_hasta = contrato.get("Hasta", "")
         estado = contrato.get("Estado", "")
         vehiculo = contrato.get("Vehículo", "")
@@ -114,8 +117,10 @@ def _refresh_table():
                 if estado == "EnCurso":
                     dpg.add_button(
                         label="Finalizar",
-                        callback=lambda s, a, u=contrato_copia: _confirmar_finalizacion(u),
-                        width=70
+                        # CORRECCIÓN AQUÍ:
+                        callback=lambda s, a, u: _confirmar_finalizacion(u),
+                        width=70,
+                        user_data=contrato_copia  # <--- IMPORTANTE: Agregar esto
                     )
                 elif estado == "EnReservado":
                     dpg.add_text("(Ver Reservas)", color=(150, 150, 150))
@@ -135,6 +140,8 @@ def _on_nuevo_contrato():
         _form_dialog.show()
     else:
         _show_notification("Error cargando formulario", error=True)
+
+
 
 
 def _on_guardar_contrato(data: dict):
@@ -179,12 +186,13 @@ def _on_guardar_contrato(data: dict):
             _show_notification("Formato de fecha inválido. Use YYYY-MM-DD.", error=True)
             return
 
-        exito = _contrato_controller.crear_reserva(data)
+        exito = _contrato_controller.crear_alquiler(data)
+
         if exito:
-            _show_notification("Contrato/Reserva creado correctamente.")
+            _show_notification("Alquiler creado correctamente (En Curso).")
             _refresh_table()
         else:
-            _show_notification("No se pudo crear. Verifique disponibilidad.", error=True)
+            _show_notification("No se pudo crear el alquiler. Verifique disponibilidad.", error=True)
 
     except Exception as e:
         _show_notification(f"Error: {str(e)}", error=True)

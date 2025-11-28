@@ -142,3 +142,64 @@ class ContratoController:
             "clientes": [{"label": f"{c.documento} - {c.persona.nombre}", "value": c.id} for c in clientes],
             "pagos": [{"label": p.nombre, "value": p.id} for p in pagos]
         }
+
+    # controlladores/controller_contrato.py
+
+    def crear_alquiler(self, data: Dict[str, Any]) -> bool:
+        """
+        Crea un alquiler directo (estado EnCurso) para entrega inmediata.
+        """
+        try:
+            # 1. Preparar Fechas
+            f_desde = datetime.strptime(data["Fecha Desde"], "%Y-%m-%d")
+            f_hasta = datetime.strptime(data["Fecha Hasta"], "%Y-%m-%d")
+
+            dias = (f_hasta - f_desde).days
+            if dias < 1: dias = 1
+
+            # 2. Obtener Entidades
+            vehiculo = self._vehiculo_service.get_vehiculo_by_id(data["id_vehiculo"])
+            cliente = self._cliente_service.get_cliente_by_id(data["id_cliente"])
+            empleado = self._empleado_service.get_empleado_by_id(1)
+            metodo = self._pago_service.get_metodo_pago_by_id(data["id_metodo_pago"])
+
+            if not all([vehiculo, cliente, empleado, metodo]):
+                print("Error: Datos incompletos para el alquiler.")
+                return False
+
+            # 3. CAMBIO CLAVE: Buscar estado 'EnCurso'
+            estado_curso = self._estado_service.get_estado_by_name_and_ambito("EnCurso", "Contrato")
+            if not estado_curso:
+                print("Error: Estado 'EnCurso' no existe en BD.")
+                return False
+
+            # 4. Crear Objeto Contrato con estado EnCurso
+            nuevo_contrato = Contrato(
+                id_cliente=cliente.id,
+                id_empleado=empleado.id,
+                id_metodo_de_pago=metodo.id,
+                fecha_desde=f_desde,
+                fecha_hasta=f_hasta,
+                tiene_seguro=data.get("Seguro", False),
+                id_estado=estado_curso.id  # <--- Aquí forzamos EnCurso
+            )
+
+            # 5. Detalle
+            monto_total = vehiculo.precio_base * dias
+            nuevo_detalle = DetalleContrato(
+                id_vehiculo=vehiculo.id,
+                monto=monto_total,
+                fecha_retiro=f_desde,
+                fecha_entrega=f_hasta
+            )
+
+            # 6. Llamar al servicio
+            # El servicio detectará que el contrato es "EnCurso" y moverá el vehículo a "Alquilado" automáticamente
+            print(f"Creando alquiler directo para {vehiculo.patente}")
+            resultado_id = self._service.crear_contrato_reserva(nuevo_contrato, [nuevo_detalle])
+
+            return resultado_id is not None
+
+        except Exception as e:
+            print(f"Error en crear_alquiler: {e}")
+            return False
