@@ -86,8 +86,7 @@ class Container(containers.DeclarativeContainer):
     modelo_service = providers.Factory(ModeloService, modelo_repo=modelo_repo)
     tipo_documento_service = providers.Factory(TipoDocumentoService, tipo_documento_repo=tipo_documento_repo)
     tipo_puesto_service = providers.Factory(TipoPuestoService, tipo_puesto_repo=tipo_puesto_repo)
-    tipo_inconveniente_service = providers.Factory(TipoInconvenienteService,
-                                                   tipo_inconveniente_repo=tipo_inconveniente_repo)
+    tipo_inconveniente_service = providers.Factory(TipoInconvenienteService, tipo_inconveniente_repo=tipo_inconveniente_repo)
     metodo_pago_service = providers.Factory(MetodoDePagoService, metodo_pago_repo=metodo_pago_repo)
 
     # Servicios Intermedios
@@ -135,7 +134,9 @@ class Container(containers.DeclarativeContainer):
         vista_facturacion_repo=vista_facturacion_repo,
         vista_utilizacion_repo=vista_utilizacion_repo,
         vista_vehiculos_repo=vista_vehiculos_repo,
-        vista_empleados_repo=vista_empleados_repo
+        vista_empleados_repo=vista_empleados_repo,
+        vista_historial_mantenimiento_repo=vista_historial_mantenimiento_repo,
+        vista_demanda_por_modelo_repo=vista_demanda_por_modelo_repo
     )
 
     vehiculo_controller = providers.Factory(
