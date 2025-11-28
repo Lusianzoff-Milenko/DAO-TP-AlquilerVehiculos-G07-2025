@@ -50,30 +50,26 @@ def _fetch_dashboard_data():
     """Recolección de datos robusta (calculando en Python si las vistas fallan)."""
     local_container = Container()
 
-    # Servicios y Repositorios directos
-    local_controller = local_container.reporte_controller()
-    mant_repo = local_container.mantenimiento_repo()
-    vehiculo_repo = local_container.vehiculo_repo()
-    contrato_repo = local_container.contrato_repo()  # Para fallback
-
     try:
+        # Servicios y Repositorios directos
+        local_controller = local_container.reporte_controller()
+        mant_repo = local_container.mantenimiento_repo()
+        vehiculo_repo = local_container.vehiculo_repo()
+        contrato_repo = local_container.contrato_repo()
+
         # --- 1. OBTENCIÓN DE DATOS ---
 
         # Vehículos (Directo de tabla para asegurar datos)
         vehiculos_all = vehiculo_repo.list_all()
-        print(f"[DEBUG] Total Vehículos encontrados: {len(vehiculos_all)}")
 
         # Mantenimientos (Directo de tabla)
         mantenimientos = mant_repo.list_all()
-        print(f"[DEBUG] Total Mantenimientos encontrados: {len(mantenimientos)}")
-
-        # Contratos
-        contratos_all = contrato_repo.list_all()
 
         # Intentar usar vistas para facturación (si fallan, usaremos 0)
         try:
             facturacion, total_facturado = local_controller.get_facturacion_mensual()
-        except:
+        except Exception as e:
+            print(f"[Dashboard] Error cargando facturación: {e}")
             facturacion, total_facturado = [], 0.0
 
         # --- 2. PROCESAMIENTO ---
@@ -85,7 +81,7 @@ def _fetch_dashboard_data():
         # KPI: Activos (Alquilados)
         kpi_rent = len([v for v in vehiculos_all if v.Estado.nombre == "Alquilado"])
 
-        # KPI: En Taller (Cualquier estado de mantenimiento)
+        # KPI: En Taller
         en_taller = [v for v in vehiculos_all if
                      v.Estado.ambito == "Mantenimiento" or v.Estado.nombre in ["EnMantenimiento", "EnReparacion",
                                                                                "EnDiagnostico"]]
@@ -97,7 +93,6 @@ def _fetch_dashboard_data():
         estado_counts = defaultdict(int)
         for v in vehiculos_all:
             est_nombre = v.Estado.nombre
-            # Agrupar para limpiar el gráfico
             if est_nombre in ["EnMantenimiento", "EnReparacion", "EnDiagnostico", "EnRevision"]:
                 label = "Mantenimiento"
             elif est_nombre in ["Disponible", "Alquilado", "Reservado"]:
@@ -111,10 +106,9 @@ def _fetch_dashboard_data():
         if not pie_est_val: pie_est_val, pie_est_lbl = [1], ["Sin Datos"]
 
         # G2: Ingresos (Barras)
-        # Si la vista falló, usamos datos dummy o 0 para no romper el gráfico
         if not facturacion:
-            bar_money_lbl = ["Ene", "Feb", "Mar", "Abr", "May", "Jun"]
-            bar_money_val = [0, 0, 0, 0, 0, 0]
+            bar_money_lbl = ["-"]
+            bar_money_val = [0]
         else:
             ingresos_mes = defaultdict(float)
             for item in facturacion:
@@ -128,35 +122,38 @@ def _fetch_dashboard_data():
             bar_money_lbl = [x[0] for x in sorted_m]
             bar_money_val = [x[1] for x in sorted_m]
 
-        # G3: Top Modelos (Barras) - CALCULO MANUAL (Sin depender de vista)
-        # Contamos cuántas veces aparece cada modelo en los contratos
+        if not bar_money_val:
+            bar_money_lbl, bar_money_val = ["Sin Datos"], [0]
+
+        # G3: Top Modelos (Barras)
         modelo_counter = defaultdict(int)
-        # Si tienes acceso a los contratos y sus detalles:
-        # (Simplificado: usamos el vehículo actual, idealmente sería histórico de contratos)
-        # Como aproximación, contamos cuántos vehículos tenemos de cada modelo en la flota
         for v in vehiculos_all:
-            modelo_name = v.Modelo.nombre if v.Modelo else "Desconocido"
+            # Nos aseguramos de acceder a la relación cargada
+            try:
+                modelo_name = v.Modelo.nombre if v.Modelo else "Desconocido"
+            except:
+                modelo_name = "Error"
             modelo_counter[modelo_name] += 1
 
-        # Ordenar top 5
         top_mods = sorted(modelo_counter.items(), key=lambda x: x[1], reverse=True)[:5]
         bar_mod_lbl = [x[0] for x in top_mods]
         bar_mod_val = [x[1] for x in top_mods]
 
-        if not bar_mod_val:  # Fallback si no hay vehículos
+        if not bar_mod_val:
             bar_mod_lbl, bar_mod_val = ["Sin Datos"], [0]
 
         # G4: Tipos Mantenimiento (Pie)
         mant_counts = {"Preventivo": 0, "Correctivo": 0}
         for m in mantenimientos:
-            # Lógica simple: si cuesta más de $50.000 es correctivo (arreglo), sino preventivo (service)
-            tipo = "Correctivo" if m.costo > 50000 else "Preventivo"
-            mant_counts[tipo] += 1
+            try:
+                tipo = "Correctivo" if m.costo > 50000 else "Preventivo"
+                mant_counts[tipo] += 1
+            except:
+                pass
 
         pie_mant_lbl = [k for k, v in mant_counts.items() if v > 0]
         pie_mant_val = [v for v in mant_counts.values() if v > 0]
 
-        # Fallback para que el gráfico no quede negro
         if not pie_mant_val:
             pie_mant_val, pie_mant_lbl = [1], ["Sin Mantenimientos"]
 
@@ -173,6 +170,9 @@ def _fetch_dashboard_data():
         import traceback
         traceback.print_exc()
         return None
+    finally:
+        # Importante: Cerrar recursos del contenedor temporal para liberar la sesión DB
+        local_container.shutdown_resources()
 
 
 def _update_ui(data):
@@ -186,17 +186,20 @@ def _update_ui(data):
     def update_bar_chart(tag_series, tag_axis_x, tag_axis_y, labels, values):
         if not dpg.does_item_exist(tag_series): return
 
-        # Eje X numérico
         x = list(range(len(values)))
-        if not values: x, values, labels = [0], [0], ["-"]
 
+        # Actualizar datos
         dpg.set_value(tag_series, [x, values])
-        # Etiquetas personalizadas en eje X
+
+        # Actualizar etiquetas del eje X
         dpg.set_axis_ticks(tag_axis_x, [(label, i) for i, label in enumerate(labels)])
 
-        # Ajustar límites para estética
+        # Ajustar límites
         dpg.set_axis_limits(tag_axis_x, -0.6, len(x) - 0.4)
-        ymax = max(values) if values else 10
+
+        # FIX: Calcular correctamente el máximo para evitar error si es 0
+        max_val = max(values) if values else 0
+        ymax = max_val if max_val > 0 else 10
         dpg.set_axis_limits(tag_axis_y, 0, ymax * 1.2)
 
     # Actualizar Pie Chart Estado
@@ -234,7 +237,6 @@ def _draw_kpi_card(tag_val, label, icon, color):
 
 
 def _draw_chart_container(title, height=500):
-    # Aumentamos height para formato cuadrado
     container = dpg.add_child_window(border=True, width=-1, height=height, no_scrollbar=True, no_scroll_with_mouse=True)
     _apply_card_theme(container)
     with dpg.group(parent=container):
@@ -251,7 +253,6 @@ def register():
     with dpg.child_window(tag=_TAG, parent="content_area", show=False, width=-1, height=-1, border=False):
         dpg.add_spacer(height=10)
 
-        # Header
         with dpg.group(horizontal=True):
             dpg.add_spacer(width=10)
             dpg.add_text("Dashboard Operativo", color=(56, 117, 215))
@@ -260,10 +261,9 @@ def register():
 
         dpg.add_spacer(height=20)
 
-        # ROW 1: KPI CARDS (Tabla para distribución uniforme)
+        # ROW 1: KPI CARDS
         with dpg.table(header_row=False, width=-1, policy=dpg.mvTable_SizingStretchProp,
                        borders_innerV=False, borders_innerH=False):
-            # Columnas con peso 1.0 aseguran distribución equitativa
             dpg.add_table_column(init_width_or_weight=1.0)
             dpg.add_table_column(init_width_or_weight=1.0)
             dpg.add_table_column(init_width_or_weight=1.0)
@@ -277,7 +277,6 @@ def register():
 
         dpg.add_spacer(height=20)
 
-        # Configuración de altura para gráficos cuadrados
         CHART_HEIGHT = 450
 
         # ROW 2: GRÁFICOS SUPERIORES
