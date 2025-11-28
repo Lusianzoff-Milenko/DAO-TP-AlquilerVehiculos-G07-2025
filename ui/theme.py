@@ -20,10 +20,10 @@ def _load_fonts():
                 dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
 
             dpg.bind_font(default_font)
-            print(f"✅ Fuente HD cargada: {main_font_path}")
+            print(f"Fuente HD cargada: {main_font_path}")
 
         except Exception as e:
-            print(f"⚠️ No se pudo cargar fuente del sistema: {e}. Usando default.")
+            print(f"No se pudo cargar fuente del sistema: {e}. Usando default.")
 
 
 def _install_theme_styles():

@@ -89,9 +89,9 @@ class ContratoService:
         """
         session = self._repo.session
         try:
-            # 1. Configurar estado inicial del Contrato ('EnReservado')
-            est_reservado = self._estado_service.get_estado_by_name_and_ambito("EnReservado", "Contrato")
-            contrato.id_estado = est_reservado.id
+            # 1. Configurar estado inicial del Contrato ('EnCurso')
+            est_encurso = self._estado_service.get_estado_by_name_and_ambito("EnCurso", "Contrato")
+            contrato.id_estado = est_encurso.id
 
             # 2. Agregar contrato (flush para generar ID)
             session.add(contrato)
@@ -103,32 +103,21 @@ class ContratoService:
                 session.add(det)
 
                 # 4. Obtener y Bloquear Vehículo
-                # Recuperamos el vehículo de la sesión actual para asegurar que estamos trabajando con el objeto persistente
                 vehiculo = session.query(Vehiculo).get(det.id_vehiculo)
-
-                # CRÍTICO: Inicializar el estado antes de usarlo
                 self._init_vehiculo_state(vehiculo)
-
-                # Ahora sí podemos usar la lógica del State Pattern si quisiéramos:
-                # vehiculo.get_state().reservar(contrato)
-                # (Esto lanzaría excepciones si no está disponible, lo cual es bueno)
-
-                # Validación manual (alternativa robusta):
                 if vehiculo.get_state().__class__.__name__ != "Disponible":
                     raise Exception(
                         f"El vehículo {vehiculo.patente} no está disponible (Estado: {vehiculo.get_state().__class__.__name__})")
-
-                # Forzar cambio de estado a 'Reservado'
-                est_v_reservado = self._estado_service.get_estado_by_name_and_ambito("Reservado", "Vehiculo")
-                vehiculo.id_estado = est_v_reservado.id
+                # Forzar cambio de estado a 'Alquilado'
+                est_v_alquilado = self._estado_service.get_estado_by_name_and_ambito("Alquilado", "Vehiculo")
+                vehiculo.id_estado = est_v_alquilado.id
                 session.add(vehiculo)
 
             session.commit()
-            print(f"Reserva creada exitosamente. Contrato ID: {contrato.id}")
+            print(f"Contrato creado exitosamente. Contrato ID: {contrato.id}")
             return contrato.id
 
         except DomainError as e:
-            # Aquí capturas el mensaje "La reserva debe hacerse con al menos 3 días..."
             print(f"Validación de Negocio falló: {str(e)}")
             session.rollback()
             return None

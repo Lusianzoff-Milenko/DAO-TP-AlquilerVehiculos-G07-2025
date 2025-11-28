@@ -4,7 +4,7 @@ from ui.navigation import go_to
 from ui.icons import *
 from services.containers.container import Container
 
-# Importamos las vistas
+# vistas
 from ui.windows.home import register as register_home
 from ui.windows.login import register as register_login
 from ui.windows.clientes import register as register_clientes
@@ -34,7 +34,7 @@ def _build_layout():
 
         # MAIN LAYOUT
         with dpg.group(tag="main_layout", horizontal=True):
-            # --- SIDEBAR ---
+            # SIDEBAR
             with dpg.child_window(tag="sidebar", width=SIDEBAR_WIDTH, height=-1, border=False):
                 dpg.add_spacer(height=8)
                 dpg.add_text("   PRINCIPAL", color=(100, 100, 100))
@@ -60,7 +60,7 @@ def _build_layout():
 
                 _add_menu_btn(f"{ICON_LOGOUT}  Salir", "login", is_logout=True)
 
-            # --- CONTENT AREA (Ocupa el resto) ---
+            # CONTENT AREA
             with dpg.group(width=-1, height=-1):
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=5)
@@ -89,7 +89,6 @@ def _add_menu_btn(label, view_name, is_logout=False):
 
 def run_app():
     dpg.create_context()
-    # Creamos viewport con tamaño base, pero luego maximizaremos
     dpg.create_viewport(title="Drive&Go System", width=1280, height=800)
 
     install_theme()
@@ -119,7 +118,6 @@ def run_app():
     dpg.setup_dearpygui()
     dpg.show_viewport()
 
-    # --- AQUÍ ESTÁ LA MAGIA PARA QUE SE AJUSTE A LA RESOLUCIÓN ---
     dpg.maximize_viewport()
 
     dpg.start_dearpygui()

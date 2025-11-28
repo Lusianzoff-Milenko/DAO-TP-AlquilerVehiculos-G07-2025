@@ -9,7 +9,7 @@ _cliente_controller = None
 _form_dialog = None
 _current_filter = {"query": ""}
 _tipos_documento_options = []
-_editing_cliente_id = None  # ID del cliente siendo editado
+_editing_cliente_id = None 
 
 def _get_filtered_data():
     """Obtiene y filtra los datos desde la base de datos."""
@@ -17,10 +17,8 @@ def _get_filtered_data():
         return []
     
     try:
-        # Obtener todos los clientes desde la BD
         clientes = _cliente_controller.get_all_clientes()
         
-        # Concatenar Nombre + Apellido para mostrar nombre completo
         for c in clientes:
             c["Nombre Completo"] = f"{c['Nombre']} {c['Apellido']}"
         
@@ -61,15 +59,14 @@ def _on_editar_cliente(cliente: dict):
         return
     
     try:
-        # Guardar el ID del cliente que se está editando
+        # ID del cliente que se está editando
         _editing_cliente_id = cliente.get("ID", 0)
         
-        # Mapear los datos del cliente al formato del formulario (sin ID)
         form_data = {
             "Nombre": cliente.get("Nombre", ""),
             "Apellido": cliente.get("Apellido", ""),
             "Documento": cliente.get("Documento", ""),
-            "id_tipo_documento": cliente.get("Tipo Doc", "DNI"),  # Nombre del tipo
+            "id_tipo_documento": cliente.get("Tipo Doc", "DNI"), 
             "Email": cliente.get("Email", ""),
             "Teléfono": cliente.get("Teléfono", ""),
             "Dirección": cliente.get("Dirección", ""),
@@ -82,7 +79,7 @@ def _on_editar_cliente(cliente: dict):
 
 def _on_eliminar_cliente(cliente: dict):
     """Elimina un cliente con confirmación."""
-    # Crear ventana de confirmación
+    # ventana de confirmación
     with dpg.window(label="Confirmar eliminación", modal=True, width=400, height=150, tag="confirm_delete"):
         dpg.add_spacer(height=12)
         dpg.add_text(f"¿Está seguro que desea eliminar al cliente '{cliente['Nombre Completo']}'?")
@@ -126,7 +123,7 @@ def _on_guardar_cliente(data: dict):
     global _editing_cliente_id
     
     try:
-        # Validar fecha de nacimiento (debe ser mayor de 18 años)
+        # Validar fecha de nacimiento
         from datetime import datetime, timedelta
         fecha_nac_str = data.get('Fecha Nacimiento', '')
         try:
@@ -141,10 +138,9 @@ def _on_guardar_cliente(data: dict):
             _show_notification("Error: Formato de fecha inválido. Use YYYY-MM-DD", error=True)
             return
         
-        # Mapear el índice del combo al ID real del tipo de documento
+        # índice del combo al ID real del tipo de documento
         tipo_doc_value = data.get('id_tipo_documento', '')
         if isinstance(tipo_doc_value, str):
-            # Si viene como string (nombre del tipo), buscar el ID
             tipo_doc_labels = [label for label, _ in _tipos_documento_options]
             if tipo_doc_value in tipo_doc_labels:
                 tipo_doc_index = tipo_doc_labels.index(tipo_doc_value)
@@ -155,7 +151,6 @@ def _on_guardar_cliente(data: dict):
         nombre_completo = f"{data['Nombre']} {data['Apellido']}"
         
         if _editing_cliente_id and _editing_cliente_id > 0:
-            # Es edición
             success = _cliente_controller.update_cliente(_editing_cliente_id, data)
             
             if success:
@@ -166,7 +161,6 @@ def _on_guardar_cliente(data: dict):
             
             _editing_cliente_id = None
         else:
-            # Es creación
             nuevo_id = _cliente_controller.create_cliente(data)
             
             if nuevo_id:
@@ -183,7 +177,7 @@ def _refresh_table():
         return
     
     # Eliminar todas las filas existentes
-    children = dpg.get_item_children("clientes_table", slot=1)  # slot 1 = rows
+    children = dpg.get_item_children("clientes_table", slot=1)  
     if children:
         for child in children:
             dpg.delete_item(child)

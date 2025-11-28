@@ -20,7 +20,7 @@ ICON_CHECK     = ""
 ICON_PLUS      = ""
 ICON_REFRESH   = ""
 
-# Función dummy para compatibilidad
+# Función para compatibilidad
 def ensure_font_exists():
     return True
 

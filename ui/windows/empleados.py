@@ -103,7 +103,7 @@ def _on_editar_empleado(empleado):
         "Email": empleado.get("Email", ""),
         "Teléfono": empleado.get("Teléfono", ""),
         "Dirección": empleado.get("Dirección", ""),
-        "Fecha Nacimiento": empleado.get("Fecha Nacimiento", "2000-01-01"),
+        "Fecha Nacimiento": empleado.get("Fecha Nacimiento", ""),
     }
     id_puesto = empleado.get("id_tipo_puesto")
     for puesto in _puestos_options:
@@ -251,9 +251,9 @@ def register(empleado_controller):
         dpg.add_spacer(height=16)
         with dpg.group(horizontal=True):
             dpg.add_spacer(width=12)
+            dpg.add_button(label="+ Nuevo Empleado", callback=_on_nuevo_empleado, width=140)
+            dpg.add_spacer(width=20) 
             dpg.add_text("Total: 0 empleados", tag="total_empleados")
-            dpg.add_spacer(width=20)
-            dpg.add_button(label="Nuevo Empleado", callback=_on_nuevo_empleado, width=140)
         dpg.add_spacer(height=12)
         with dpg.table(
             tag=_TABLE_TAG,
