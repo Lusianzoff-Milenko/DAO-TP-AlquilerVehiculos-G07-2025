@@ -13,7 +13,6 @@ _colores_options = []
 _estados_options = []
 _marcas_options = []
 
-
 # --- UTILIDADES ---
 
 def _get_center_pos(width, height):
@@ -26,7 +25,6 @@ def _get_center_pos(width, height):
     pos_y = (vp_h - height) // 2
     # Asegurar que no sea negativo
     return [max(0, pos_x), max(0, pos_y)]
-
 
 def _force_focus(tag):
     """Fuerza el foco en la ventana."""
