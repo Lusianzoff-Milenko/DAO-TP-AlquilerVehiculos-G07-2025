@@ -12,6 +12,7 @@ from ui.windows.vehiculos import register as register_vehiculos
 from ui.windows.reportes import register as register_reportes
 from ui.windows.empleados import register as register_empleados
 from ui.windows.reservas import register as register_reservas
+from ui.windows.mantenimientos import register as register_mantenimientos  # <--- AGREGAR ESTO
 
 SIDEBAR_WIDTH = 250
 
@@ -113,6 +114,7 @@ def run_app():
     register_reportes()
     register_contratos(contrato_controller)
     register_reservas(contrato_controller)
+    register_mantenimientos()  # <--- AGREGAR ESTO
 
     dpg.configure_item("sidebar", show=False)
     go_to("login")
