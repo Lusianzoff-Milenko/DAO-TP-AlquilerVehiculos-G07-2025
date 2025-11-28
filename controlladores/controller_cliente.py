@@ -109,3 +109,23 @@ class ClienteController:
         return {
             "tipos_documento": [{"label": t.nombre, "value": t.id} for t in tipos]
         }
+    
+    def get_cliente_by_documento_and_tipo(self, tipo_documento: int, documento: str) -> Optional[Dict[str, Any]]:
+        cliente = self._service.get_cliente_by_documento_and_tipo(documento, tipo_documento)
+        print(cliente)
+        if not cliente:
+            return None
+
+        p = cliente.persona
+
+        return {
+            "ID": cliente.id,
+            "Nombre": p.nombre,
+            "Apellido": p.apellido,
+            "Documento": cliente.documento,
+            "Tipo Doc": cliente.TipoDocumento.nombre if cliente.TipoDocumento else "S/D",
+            "Email": p.mail,
+            "Teléfono": p.telefono,
+            "Dirección": p.direccion,
+            "Fecha Nacimiento": p.fecha_nacimiento.strftime("%Y-%m-%d") if p.fecha_nacimiento else "2000-01-01"
+        }

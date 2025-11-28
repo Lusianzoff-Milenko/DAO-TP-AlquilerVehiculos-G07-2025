@@ -8,3 +8,6 @@ class ClienteRepository(SQLAlchemyRepository[Cliente]):
 
     def get_by_documento(self, documento):
         return self.session.query(Cliente).filter(Cliente.documento == documento).first()
+
+    def get_by_documento_and_tipo_documento(self, documento,tipo_documento:int):
+        return self.session.query(Cliente).filter(Cliente.documento == documento and Cliente.id_tipo_documento == tipo_documento).first()
