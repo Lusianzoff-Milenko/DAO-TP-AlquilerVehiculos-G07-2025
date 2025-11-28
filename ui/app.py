@@ -11,6 +11,7 @@ from ui.windows.clientes import register as register_clientes
 from ui.windows.vehiculos import register as register_vehiculos
 from ui.windows.reportes import register as register_reportes
 from ui.windows.empleados import register as register_empleados
+from ui.windows.reservas import register as register_reservas
 
 SIDEBAR_WIDTH = 250
 
@@ -111,6 +112,7 @@ def run_app():
     register_empleados(empleado_controller)
     register_reportes()
     register_contratos(contrato_controller)
+    register_reservas(contrato_controller)
 
     dpg.configure_item("sidebar", show=False)
     go_to("login")
