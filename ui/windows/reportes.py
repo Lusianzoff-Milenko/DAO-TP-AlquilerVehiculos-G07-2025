@@ -88,6 +88,39 @@ def _on_facturacion_loaded(result):
     _update_table("tbl_facturacion", data)
     dpg.set_value("txt_total_facturado", f"Total Facturado: ${total:,.2f}")
 
+def _on_alquileres_loaded(result):
+    """Callback para listado de alquileres por cliente (result = lista de dicts)."""
+    # limpiar tabla si existe
+    if dpg.does_item_exist("tbl_alquileres_cliente"):
+        children = dpg.get_item_children("tbl_alquileres_cliente", slot=1)
+        if children:
+            for child in children:
+                dpg.delete_item(child)
+
+    if not result:
+        return
+
+    for row in result:
+        with dpg.table_row(parent="tbl_alquileres_cliente"):
+            dpg.add_text(str(row.get("contrato_id", "")))
+            dpg.add_text(str(row.get("cliente", "")))
+            dpg.add_text(str(row.get("fecha_inicio", "")))
+            dpg.add_text(str(row.get("fecha_fin", "")))
+            dpg.add_text(str(row.get("total", "")))
+        # detalles del contrato como filas secundarias
+        for det in row.get("detalles", []):
+            with dpg.table_row(parent="tbl_alquileres_cliente"):
+                dpg.add_text("   → " + str(det.get("vehiculo", "")))
+                dpg.add_text("")  # columna vacía para alinear
+                dpg.add_text("")
+                dpg.add_text(f" Cant: {det.get('cantidad', '')}")
+                dpg.add_text(f" Subt: {det.get('subtotal', '')}")
+
+def _load_alquileres_por_cliente(cliente_id=None, inicio=None, fin=None):
+    # Ejecuta el método del controlador asincrónicamente y actualiza con el callback
+    run_async(lambda: _controller.get_alquileres_por_cliente() if cliente_id is None
+              else _controller.get_alquileres_por_cliente(cliente_id, inicio, fin),
+              on_success=_on_alquileres_loaded)
 
 # --- Loaders (Disparadores de tareas) ---
 
@@ -141,6 +174,29 @@ def register():
                     dpg.add_table_column(label="Patente")
                     dpg.add_table_column(label="Precio Diario")
                     dpg.add_table_column(label="Estado")
+
+            # TAB: Alquileres por Cliente (pegar en el tab_bar)
+            with dpg.tab(label="📋 Alquileres por Cliente"):
+                dpg.add_spacer(height=5)
+                dpg.add_input_int(label="Cliente ID", tag="r_alq_cliente_id")
+                dpg.add_input_text(label="Fecha inicio (YYYY-MM-DD)", tag="r_alq_fecha_inicio")
+                dpg.add_input_text(label="Fecha fin (YYYY-MM-DD)", tag="r_alq_fecha_fin")
+                dpg.add_button(label="🔎 Buscar", callback=lambda s,a: _load_alquileres_por_cliente(
+                    dpg.get_value("r_alq_cliente_id") or None,
+                    (lambda t: None if not t else __import__('datetime').date.fromisoformat(t))(dpg.get_value("r_alq_fecha_inicio")),
+                    (lambda t: None if not t else __import__('datetime').date.fromisoformat(t))(dpg.get_value("r_alq_fecha_fin"))
+                ))
+                dpg.add_spacer(height=5)
+
+                with dpg.table(tag="tbl_alquileres_cliente", header_row=True, borders_innerH=True,
+                               row_background=True, scrollY=True, height=450,
+                               policy=dpg.mvTable_SizingStretchProp):
+                    dpg.add_table_column(label="Contrato #")
+                    dpg.add_table_column(label="Cliente")
+                    dpg.add_table_column(label="Fecha Inicio")
+                    dpg.add_table_column(label="Fecha Fin")
+                    dpg.add_table_column(label="Total")
+
 
             # TAB 2: Rentabilidad de Contratos (Ajustar ancho de ID)
             with dpg.tab(label="💰 Rentabilidad"):

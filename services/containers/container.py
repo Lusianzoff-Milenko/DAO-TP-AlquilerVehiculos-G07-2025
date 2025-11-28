@@ -136,7 +136,10 @@ class Container(containers.DeclarativeContainer):
         vista_vehiculos_repo=vista_vehiculos_repo,
         vista_empleados_repo=vista_empleados_repo,
         vista_historial_mantenimiento_repo=vista_historial_mantenimiento_repo,
-        vista_demanda_por_modelo_repo=vista_demanda_por_modelo_repo
+        vista_demanda_por_modelo_repo=vista_demanda_por_modelo_repo,
+
+        contrato_repo = contrato_repo,    #nuevo
+        detalle_contrato_repo = detalle_contrato_repo   #nuevo
     )
 
     vehiculo_controller = providers.Factory(

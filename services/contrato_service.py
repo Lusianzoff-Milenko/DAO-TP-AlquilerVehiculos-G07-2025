@@ -167,7 +167,7 @@ class ContratoService:
 
             for detalle in contrato.detalles_contrato:
                 vehiculo = detalle.Vehiculo
-                vehiculo.id_estado = est_v_entregado.id
+                vehiculo.get_state().entregar()
                 # Actualizar fecha real de entrega en el detalle
                 detalle.fecha_entrega = fecha_devolucion
 
