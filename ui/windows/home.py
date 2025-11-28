@@ -82,56 +82,50 @@ def _fetch_dashboard_data():
         if not pie_est_val: pie_est_val, pie_est_lbl = [1], ["Sin Datos"]
 
         # --- GRÁFICO 2: Ingresos (Barras) ---
-        # (Simplificado para el ejemplo, usa tu lógica actual si ya funciona)
         bar_money_lbl, bar_money_val = ["-"], [0]
         try:
             fact_data, _ = local_controller.get_facturacion_mensual()
             if fact_data:
-                # Tu lógica de agrupación por fechas aquí...
                 bar_money_lbl = [str(x['Fecha Fin']) for x in fact_data[:5]]
                 bar_money_val = [float(x['Facturado']) for x in fact_data[:5]]
         except:
             pass
 
         # ==================================================================
-        # GRÁFICO 3: FLOTA POR MODELO (La parte corregida)
+        # GRÁFICO 3: FLOTA POR MODELO
         # ==================================================================
         try:
-            # 1. Obtenemos los datos (Tu print confirmó que esto trae una lista de dicts)
-            # Nota: Accedemos directo al servicio si el controlador no tiene el método 'wrapper'
+            # 1. Obtenemos los datos
             flota_data = local_controller._service.get_conteo_flota_por_modelo()
 
-            # 2. Ordenamos por cantidad (mayor a menor) y tomamos los top 5
-            top_mods = sorted(flota_data, key=lambda x: x['Cantidad'], reverse=True)[:5]
+            if flota_data:
+                # 2. Ordenamos por cantidad (mayor a menor) y tomamos los top 5
+                top_mods = sorted(flota_data, key=lambda x: x['Cantidad'], reverse=True)[:5]
 
-            # 3. Separamos en dos listas: Etiquetas (Eje X) y Valores (Eje Y)
-            # Importante: Como 'top_mods' es lista de dicts, usamos clave ['Modelo'] y ['Cantidad']
-            bar_mod_lbl = [item['Modelo'] for item in top_mods]
-            bar_mod_val = [item['Cantidad'] for item in top_mods]
-
-            # Validación extra: Si la lista quedó vacía, ponemos placeholder para que no rompa el gráfico
-            if not bar_mod_val:
+                # 3. Separamos en dos listas
+                bar_mod_lbl = [item['Modelo'] for item in top_mods]
+                # Aseguramos que sea float para DPG
+                bar_mod_val = [float(item['Cantidad']) for item in top_mods]
+            else:
                 bar_mod_lbl = ["Sin Vehículos"]
-                bar_mod_val = [0]
+                bar_mod_val = [0.0]
 
         except Exception as e:
             print(f"[Dashboard] Error procesando G3: {e}")
-            bar_mod_lbl, bar_mod_val = ["Error"], [0]
+            bar_mod_lbl, bar_mod_val = ["Error"], [0.0]
 
         # --- GRÁFICO 4: Mantenimientos (Pie) ---
-        # (Tu lógica existente)
         pie_mant_lbl, pie_mant_val = ["Sin Datos"], [1]
         if mantenimientos:
             mant_counts = defaultdict(int)
             for m in mantenimientos:
-                mant_counts[m.descripcion[:10]] += 1  # Agrupa por desc
+                # Agrupa por desc (primeros 15 chars)
+                label = m.descripcion[:15] + "..." if len(m.descripcion) > 15 else m.descripcion
+                mant_counts[label] += 1
             pie_mant_lbl = list(mant_counts.keys())
             pie_mant_val = list(mant_counts.values())
 
-        # ==================================================================
-        # RETORNO DEL DICCIONARIO (PUNTO CLAVE)
-        # ==================================================================
-        # Asegúrate que las claves 'g1', 'g2', 'g3', 'g4' existen y tienen datos
+        # Retorno de datos
         return {
             'kpi_disp': kpi_disp,
             'kpi_rent': kpi_rent,
@@ -139,7 +133,7 @@ def _fetch_dashboard_data():
             'kpi_total': total_facturado,
             'g1': (pie_est_lbl, pie_est_val),
             'g2': (bar_money_lbl, bar_money_val),
-            'g3': (bar_mod_lbl, bar_mod_val),  # <--- ESTO conecta tus datos al gráfico
+            'g3': (bar_mod_lbl, bar_mod_val),
             'g4': (pie_mant_lbl, pie_mant_val)
         }
 
@@ -149,9 +143,11 @@ def _fetch_dashboard_data():
     finally:
         local_container.shutdown_resources()
 
+
 def _update_ui(data):
     if not data: return
 
+    # Actualizar KPIs
     dpg.set_value(_TAG_KPI_DISPONIBLES, str(data['kpi_disp']))
     dpg.set_value(_TAG_KPI_ACTIVOS, str(data['kpi_rent']))
     dpg.set_value(_TAG_KPI_TALLER, str(data['kpi_mant']))
@@ -160,28 +156,34 @@ def _update_ui(data):
     def update_bar_chart(tag_series, tag_axis_x, tag_axis_y, labels, values):
         if not dpg.does_item_exist(tag_series): return
 
+        # Generar eje X numérico (0, 1, 2...)
         x = list(range(len(values)))
 
-        # Actualizar datos
-        dpg.set_value(tag_series, [x, values])
+        # Asegurar que values sean floats (CRÍTICO PARA DPG)
+        y = [float(v) for v in values]
 
-        # Actualizar etiquetas del eje X
-        dpg.set_axis_ticks(tag_axis_x, [(label, i) for i, label in enumerate(labels)])
+        # Actualizar datos del gráfico [x, y]
+        dpg.set_value(tag_series, [x, y])
 
-        # Ajustar límites
-        dpg.set_axis_limits(tag_axis_x, -0.6, len(x) - 0.4)
+        # Actualizar etiquetas del eje X (Tuplas de (label, posición))
+        # DPG espera una lista/tupla de tuplas ((label, pos), ...)
+        ticks = tuple((label, i) for i, label in enumerate(labels))
+        dpg.set_axis_ticks(tag_axis_x, ticks)
 
-        # FIX: Calcular correctamente el máximo para evitar error si es 0
-        max_val = max(values) if values else 0
-        ymax = max_val if max_val > 0 else 10
-        dpg.set_axis_limits(tag_axis_y, 0, ymax * 1.2)
+        # Ajustar límites para que se vea centrado
+        if x:
+            dpg.set_axis_limits(tag_axis_x, -0.5, len(x) - 0.5)
+
+            max_val = max(y) if y else 0
+            ymax = max_val if max_val > 0 else 5
+            dpg.set_axis_limits(tag_axis_y, 0, ymax * 1.2)
 
     # Actualizar Pie Chart Estado
     if dpg.does_item_exist(_TAG_CHART_PIE_ESTADO):
         l, v = data['g1']
         dpg.configure_item(_TAG_CHART_PIE_ESTADO, labels=l, values=v)
 
-    # Actualizar Barras
+    # Actualizar Gráficos de Barras
     update_bar_chart(_TAG_CHART_BAR_MONEY, _TAG_AXIS_X_MONEY, _TAG_AXIS_Y_MONEY, data['g2'][0], data['g2'][1])
     update_bar_chart(_TAG_CHART_BAR_MODELS, _TAG_AXIS_X_MODELS, _TAG_AXIS_Y_MODELS, data['g3'][0], data['g3'][1])
 
@@ -286,7 +288,7 @@ def register():
             dpg.add_table_column(init_width_or_weight=1.0)
 
             with dpg.table_row():
-                # G3: Modelos (Barras Verticales)
+                # G3: Modelos (Barras Verticales) - CORREGIDO
                 c3 = _draw_chart_container("Flota por Modelo (Top 5)", height=CHART_HEIGHT)
                 with dpg.plot(parent=c3, no_title=True, width=-1, height=-1, no_mouse_pos=True):
                     dpg.add_plot_axis(dpg.mvXAxis, label="", tag=_TAG_AXIS_X_MODELS, no_gridlines=True)
