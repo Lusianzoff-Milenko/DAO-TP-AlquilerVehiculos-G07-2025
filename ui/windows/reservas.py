@@ -30,6 +30,41 @@ def _show_notification(message: str, error: bool = False):
     threading.Thread(target=hide, daemon=True).start()
 
 
+def _confirmar_cancelacion(reserva_data):
+    """Muestra modal para confirmar cancelación."""
+
+    def _on_yes(sender, app_data, user_data):
+        c_id = user_data.get("ID")
+        if _contrato_controller.cancelar_reserva(c_id):
+            _show_notification(f"Reserva #{c_id} cancelada y vehículo liberado.")
+            dpg.delete_item("modal_cancelar_reserva")
+            _refresh_table()
+        else:
+            _show_notification("Error al cancelar la reserva.", error=True)
+
+    # Crear modal
+    if dpg.does_item_exist("modal_cancelar_reserva"):
+        dpg.delete_item("modal_cancelar_reserva")
+
+    viewport_width = dpg.get_viewport_client_width()
+    viewport_height = dpg.get_viewport_client_height()
+    w, h = 350, 150
+
+    with dpg.window(label="Cancelar Reserva", tag="modal_cancelar_reserva", modal=True,
+                    width=w, height=h, pos=[(viewport_width - w) // 2, (viewport_height - h) // 2], no_resize=True):
+
+        dpg.add_text(f"¿Está seguro de cancelar la reserva #{reserva_data.get('ID')}?")
+        dpg.add_text(f"El vehículo {reserva_data.get('Vehículo')} volverá a estar Disponible.",
+                     color=(255, 200, 100))
+        dpg.add_spacer(height=15)
+
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Sí, Cancelar", callback=_on_yes, user_data=reserva_data, width=100)
+            dpg.add_button(label="No, volver", callback=lambda: dpg.delete_item("modal_cancelar_reserva"),
+                           width=100)
+
+
+
 def _refresh_table():
     if not _contrato_controller: return
 
@@ -56,12 +91,21 @@ def _refresh_table():
             dpg.add_text(r.get("Hasta"))
             dpg.add_text(r.get("Total"))
 
-            # Botón de acción
-            dpg.add_button(
-                label="Entregar Vehículo",
-                callback=lambda s, a, u=r: _abrir_confirmacion_pago(u),
-                user_data=r
-            )
+            # Columna de Acciones con GRUPO HORIZONTAL
+            with dpg.group(horizontal=True):
+                dpg.add_button(
+                    label="Entregar",
+                    callback=lambda s, a, u=r: _abrir_confirmacion_pago(u),
+                    user_data=r,
+                    width=70
+                )
+                # --- NUEVO BOTÓN ---
+                dpg.add_button(
+                    label="Cancelar",
+                    callback=lambda s, a, u=r: _confirmar_cancelacion(u),
+                    user_data=r,
+                    width=70
+                )
 
 
 def _abrir_confirmacion_pago(reserva_data):
@@ -149,6 +193,7 @@ def _on_guardar_reserva(data: dict):
     except Exception as e:
         _show_notification(f"Excepción: {e}", error=True)
 
+    # En ui/windows/reservas.py, agrega esta función (puede ser antes de _refresh_table)
 
 def register(contrato_controller):
     global _contrato_controller, _form_dialog, _form_options

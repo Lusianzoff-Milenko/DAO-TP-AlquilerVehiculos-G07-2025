@@ -203,3 +203,10 @@ class ContratoController:
         except Exception as e:
             print(f"Error en crear_alquiler: {e}")
             return False
+
+    # En controlladores/controller_contrato.py
+
+    def cancelar_reserva(self, contrato_id: int) -> bool:
+        """Cancela una reserva activa."""
+        # Podrías pedir la razón en un modal, por ahora usamos una por defecto
+        return self._service.cancelar_contrato(contrato_id, "Cancelado por el cliente/usuario")

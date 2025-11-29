@@ -176,3 +176,41 @@ class ContratoService:
             return True
 
         return False
+
+
+    def cancelar_contrato(self, contrato_id: int, razon: str) -> bool:
+        """
+        Cancela un contrato en estado EnReservado y libera los vehículos asociados.
+        """
+        contrato = self.get_contrato_by_id(contrato_id)
+        if not contrato:
+            print("Error: Contrato no encontrado.")
+            return False
+
+        # 1. Intentar cancelar el contrato (Transición de Estado)
+        # Esto llama a domain/states/contrato/en_reservado.py -> cancelar()
+        if contrato.get_state().cancelar(razon):
+
+            # 2. Liberar los vehículos (Pasar de Reservado -> Disponible)
+            for detalle in contrato.detalles_contrato:
+                vehiculo = detalle.Vehiculo
+                # Asegurar que el vehículo tenga su estado inicializado
+                self._init_vehiculo_state(vehiculo)
+
+                try:
+                    # Llamamos a reincorporar en el estado del vehículo (ver domain/states/vehiculo/reservado.py)
+                    vehiculo.get_state().reincorporar(f"Cancelación de contrato #{contrato.id}")
+                    self._repo.session.add(vehiculo)  # Marcar para guardar
+                except Exception as e:
+                    print(f"Advertencia al liberar vehículo {vehiculo.patente}: {e}")
+
+            # 3. Guardar cambios en la BD
+            try:
+                self._repo.update(contrato)
+                return True
+            except Exception as e:
+                self._repo.session.rollback()
+                print(f"Error guardando cancelación: {e}")
+                return False
+
+        return False
